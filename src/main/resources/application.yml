@@ -7,16 +7,22 @@ spring:
 
   # --- 1. НАСТРОЙКИ НА БАЗАТА ДАННИ ---
   datasource:
-    url: jdbc:postgresql://localhost:5435/knowledge_db
+    url: jdbc:postgresql://localhost:5435/ai_knowledge_hub_db
     username: postgres
     password: 12345
     driver-class-name: org.postgresql.Driver
 
-  # --- 2. HIBERNATE / JPA (Връзката между Java и SQL) ---
+  # --- 2. ИНИЦИАЛИЗАЦИЯ (За да се пусне vector extension-a)
+  sql:
+    init:
+      mode: always # <--- ВАЖНО: Задължително пуска schema.sql при старт
+
+  # --- 3. HIBERNATE / JPA ---
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
+    defer-datasource-initialization: false # Пуска schema.sql ПРЕДИ Hibernate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -25,13 +31,13 @@ spring:
           lob:
             non_contextual_creation: true
 
-  # --- 3. ЛИМИТИ ЗА КАЧВАНЕ НА ФАЙЛОВЕ ---
+  # --- 4. ЛИМИТИ ЗА КАЧВАНЕ НА ФАЙЛОВЕ ---
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
 
-  # --- 4. SPRING AI НАСТРОЙКИ ---
+  # --- 5. SPRING AI НАСТРОЙКИ ---
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -39,14 +45,12 @@ spring:
         options:
           model: gpt-3.5-turbo
 
-    # Настройки за ВЕКТОРИ (Локално генериране с ONNX / Transformers)
-    # Ако ползваш 'spring-ai-transformers', то обикновено работи автоматично.
-    # Тук изрично казваме да НЕ ползва OpenAI за вектори, за да е безплатно.
+    # Вектори: Локално генериране
     embedding:
       transformer:
-        enabled: true  # Включва локалния модел (all-MiniLM-L6-v2)
+        enabled: true
 
-# --- 5. LOGGING (Да виждаме какво става) ---
+# --- 6. LOGGING ---
 logging:
   level:
     org.hibernate.SQL: DEBUG
