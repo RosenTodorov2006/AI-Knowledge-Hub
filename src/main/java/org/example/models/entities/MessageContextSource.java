@@ -3,8 +3,8 @@ package org.example.models.entities;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "message_sources")
-public class MessageSource extends BaseEntity{
+@Table(name = "message_context_sources")
+public class MessageContextSource extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "message_id", nullable = false)
     private Message message;
@@ -17,12 +17,14 @@ public class MessageSource extends BaseEntity{
     @Column(name = "similarity_score", nullable = false)
     private Double score;
 
-    public MessageSource(Message message, DocumentChunk chunk, Double score) {
+    public MessageContextSource(Message message, DocumentChunk chunk, Double score) {
         this.message = message;
         this.chunk = chunk;
         this.score = score;
     }
-    public MessageSource() {}
+
+    public MessageContextSource() {
+    }
 
     public Message getMessage() {
         return message;

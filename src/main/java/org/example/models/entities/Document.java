@@ -17,16 +17,12 @@ public class Document extends BaseEntity{
     private DocumentStatus documentStatus;
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
 
-    public Document(String filename, String mimeType, DocumentStatus documentStatus, LocalDateTime uploadedAt, User user) {
+    public Document(String filename, String mimeType, DocumentStatus documentStatus, LocalDateTime uploadedAt) {
         this.filename = filename;
         this.mimeType = mimeType;
         this.documentStatus = documentStatus;
         this.uploadedAt = uploadedAt;
-        this.user = user;
     }
 
     public Document() {
@@ -62,13 +58,5 @@ public class Document extends BaseEntity{
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
     }
 }
