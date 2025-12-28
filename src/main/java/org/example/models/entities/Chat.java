@@ -17,11 +17,16 @@ public class Chat extends BaseEntity{
     private User user;
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL)
     private List<Message> messages;
+    @ManyToOne
+    @JoinColumn(name = "document_id", nullable = false)
+    private Document document;
 
-    public Chat(String title, LocalDateTime lastMessageAt, User user) {
+    public Chat(String title, LocalDateTime lastMessageAt, User user, List<Message> messages, Document document) {
         this.title = title;
         this.lastMessageAt = lastMessageAt;
         this.user = user;
+        this.messages = messages;
+        this.document = document;
     }
 
     public Chat() {
@@ -57,5 +62,13 @@ public class Chat extends BaseEntity{
 
     public void setMessages(List<Message> messages) {
         this.messages = messages;
+    }
+
+    public Document getDocument() {
+        return document;
+    }
+
+    public void setDocument(Document document) {
+        this.document = document;
     }
 }
