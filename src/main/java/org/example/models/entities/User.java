@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 public class User extends BaseEntity{
     @Column(unique = true, nullable = false)
     private String email;
-    @Column(nullable = false, name = "password_hash")
-    private String passwordHash;
+    @Column(nullable = false, name = "password")
+    private String password;
     @Column(nullable = false, name = "full_name")
     private String fullName;
     @Column(nullable = false)
@@ -21,9 +21,9 @@ public class User extends BaseEntity{
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public User(String email, String passwordHash, String fullName, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt) {
+    public User(String email, String password, String fullName, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt) {
         this.email = email;
-        this.passwordHash = passwordHash;
+        this.password = password;
         this.fullName = fullName;
         this.applicationRole = applicationRole;
         this.active = active;
@@ -41,12 +41,12 @@ public class User extends BaseEntity{
         this.email = email;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getPassword() {
+        return password;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getFullName() {
