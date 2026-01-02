@@ -6,13 +6,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-public class User extends BaseEntity{
+public class UserEntity extends BaseEntity{
     @Column(unique = true, nullable = false)
     private String email;
     @Column(nullable = false, name = "password")
     private String password;
     @Column(nullable = false, name = "full_name")
-    private String fullName;
+    private String username;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ApplicationRole applicationRole;
@@ -21,16 +21,16 @@ public class User extends BaseEntity{
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public User(String email, String password, String fullName, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt) {
+    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt) {
         this.email = email;
         this.password = password;
-        this.fullName = fullName;
+        this.username = username;
         this.applicationRole = applicationRole;
         this.active = active;
         this.createdAt = createdAt;
     }
 
-    public User() {
+    public UserEntity() {
     }
 
     public String getEmail() {
@@ -49,12 +49,12 @@ public class User extends BaseEntity{
         this.password = password;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public ApplicationRole getRole() {

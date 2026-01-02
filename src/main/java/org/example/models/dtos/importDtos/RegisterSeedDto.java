@@ -5,8 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.example.validation.annotation.UniqueEmail;
 import org.example.validation.annotation.UniqueUsername;
+import org.example.validation.annotation.ValidPasswords;
 import org.hibernate.validator.constraints.Length;
-
+@ValidPasswords
 public class RegisterSeedDto {
     @Length(min = 3, max = 20, message = "Name length must be between 3 and 20 characters.")
     @NotNull
