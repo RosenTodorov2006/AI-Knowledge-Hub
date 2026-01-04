@@ -18,15 +18,20 @@ public class SecurityConfiguration {
                         authorizeRequests
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                                 .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features").permitAll()
+                                // Пускам тестовите API-та без логване
+                                .requestMatchers("/api/test/**").permitAll()
                                 .anyRequest().authenticated()
                 )
+                // Позволявам на Postman да се логне с имейл и парола без редиректи
+                .httpBasic(org.springframework.security.config.Customizer.withDefaults())
                 .formLogin(formLogin ->
                         formLogin
                                 .loginPage("/login")
                                 .usernameParameter("email")
                                 .passwordParameter("password")
                                 .defaultSuccessUrl("/", true)
-                                .failureUrl("/login-error")
+                                .failureForwardUrl("/login-error") // failureUrl -> failureForwardUrl за по-добра работа
+                                .permitAll()
                 )
                 .logout(logout ->
                         logout
