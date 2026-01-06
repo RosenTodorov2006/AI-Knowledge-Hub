@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.0'
+    id 'io.spring.dependency-management' version '1.1.5'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+repositories {
+    mavenCentral()
+    // ВАЖНО: Spring AI все още е в "Milestone" фаза, затова трябва това репо:
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+// Тази секция управлява версиите на AI библиотеките автоматично
+ext {
+    set('springAiVersion', "1.0.0-M1") // Или по-нова версия ако излезе
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // --- БАЗА ДАННИ (POSTGRESQL) ---
+    runtimeOnly 'org.postgresql:postgresql'
+    // https://mvnrepository.com/artifact/com.pgvector/pgvector
+    implementation 'com.pgvector:pgvector:0.1.6'
+
+    // 1. За ЧАТ с ChatGPT (OpenAI)
+    implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
+    // 2. За ЛОКАЛНИ ВЕКТОРИ
+    implementation 'org.springframework.ai:spring-ai-transformers-spring-boot-starter'
+
+    // Apache PDFBox - стандартът за четене на PDF в Java
+    implementation 'org.apache.pdfbox:pdfbox:3.0.2'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.modelmapper:modelmapper:3.2.0'
+    implementation 'com.google.code.gson:gson'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
