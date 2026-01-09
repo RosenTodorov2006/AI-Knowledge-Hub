@@ -19,7 +19,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                                 .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features").permitAll()
                                 // Пускам тестовите API-та без логване
-                                .requestMatchers("/api/test/**").permitAll()
+                                .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 // Позволявам на Postman да се логне с имейл и парола без редиректи
