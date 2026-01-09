@@ -2,31 +2,32 @@ package org.example.validation.validators;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.validation.annotation.ValidPasswords;
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ValidatePasswordValidator  implements ConstraintValidator<ValidPasswords, RegisterSeedDto> {
+public class ValidatePasswordValidator implements ConstraintValidator<ValidPasswords, Object> {
+
     private String message;
+
     @Override
     public void initialize(ValidPasswords constraintAnnotation) {
-        ConstraintValidator.super.initialize(constraintAnnotation);
         this.message = constraintAnnotation.message();
     }
 
     @Override
-    public boolean isValid(RegisterSeedDto registerSeedDto, ConstraintValidatorContext constraintValidatorContext) {
-        String password = registerSeedDto.getPassword();
-        String confirmPassword = registerSeedDto.getConfirmPassword();
-        if(password == null || confirmPassword == null){
-            return true;
-        }
-        boolean isValid = confirmPassword.equals(password);
+    public boolean isValid(Object value, ConstraintValidatorContext context) {
+        BeanWrapperImpl beanWrapper = new BeanWrapperImpl(value);
 
-        if(!isValid) {
-            constraintValidatorContext.unwrap(HibernateConstraintValidatorContext.class)
+        Object password = beanWrapper.getPropertyValue("password");
+        Object confirmPassword = beanWrapper.getPropertyValue("confirmPassword");
+
+        boolean isValid = password != null && password.equals(confirmPassword);
+
+        if (!isValid) {
+            context.unwrap(HibernateConstraintValidatorContext.class)
                     .buildConstraintViolationWithTemplate(this.message)
                     .addPropertyNode("confirmPassword")
                     .addConstraintViolation()

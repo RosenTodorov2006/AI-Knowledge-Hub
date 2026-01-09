@@ -28,7 +28,7 @@ public class SettingsRestController {
             return ResponseEntity.badRequest().body(getErrors(bindingResult));
         }
         this.userService.changeProfileInfo(changeProfileDto, principal.getName());
-        UserViewDto updatedData = this.userService.getUserViewByEmail(principal.getName());
+        UserViewDto updatedData = this.userService.getUserViewByEmail(changeProfileDto.getEmail());
         return ResponseEntity.ok(updatedData);
     }
     @PostMapping("/changeUserPassword")
