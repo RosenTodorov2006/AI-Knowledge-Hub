@@ -11,21 +11,5 @@ import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class ValidationExceptionHandler {
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public String handleRegisterErrors(MethodArgumentNotValidException ex,  HttpServletRequest request,  Model model) {
-        if (request.getRequestURI().equals("/register")) {
 
-            List<String> errors = ex.getBindingResult()
-                    .getFieldErrors()
-                    .stream()
-                    .map(f -> f.getDefaultMessage())
-                    .collect(Collectors.toList());
-            model.addAttribute("errors", errors);
-            model.addAttribute("registerSeedDto", ex.getBindingResult().getTarget());
-
-            return "register";
-        } else {
-            return "/";
-        }
-    }
 }

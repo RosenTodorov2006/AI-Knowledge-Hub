@@ -4,7 +4,10 @@ server:
 spring:
   application:
     name: knowledge-hub
-
+  mvc:
+    hidden method:
+      filter:
+        enabled: true
   # --- 1. НАСТРОЙКИ НА БАЗАТА ДАННИ ---
   datasource:
     url: jdbc:postgresql://localhost:5435/ai_knowledge_hub_db
@@ -20,7 +23,7 @@ spring:
   # --- 3. HIBERNATE / JPA ---
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     defer-datasource-initialization: false # Пуска schema.sql ПРЕДИ Hibernate
     properties:

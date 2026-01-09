@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="ai_knowledge_hub_db@localhost" uuid="efe45c77-a45d-41a6-8ba0-d1bfc6075768">
+    <data-source source="LOCAL" name="ai_knowledge_hub_db@localhost [2]" uuid="8c1b962f-3ed8-4f08-8518-aaf2e562a1ff">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
