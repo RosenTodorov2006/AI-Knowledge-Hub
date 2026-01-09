@@ -20,14 +20,17 @@ public class UserEntity extends BaseEntity{
     private boolean active;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+    @Column(name = "full_name")
+    private String fullName;
 
-    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt) {
+    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt, String fullName) {
         this.email = email;
         this.password = password;
         this.username = username;
         this.applicationRole = applicationRole;
         this.active = active;
         this.createdAt = createdAt;
+        this.fullName = fullName;
     }
 
     public UserEntity() {
@@ -79,5 +82,13 @@ public class UserEntity extends BaseEntity{
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 }

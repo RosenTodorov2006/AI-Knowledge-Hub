@@ -29,7 +29,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
                 .authorities(getAllRoles(user))
-                .disabled(false)
+                .disabled(!user.isActive())
                 .build();
     }
     private static List<SimpleGrantedAuthority> getAllRoles(UserEntity user) {
