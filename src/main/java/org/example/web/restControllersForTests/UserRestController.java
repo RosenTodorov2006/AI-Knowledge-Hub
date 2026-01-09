@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.services.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -16,7 +17,11 @@ public class UserRestController {
         this.userService = userService;
     }
     @PostMapping("/register")
-    public ResponseEntity<?> testRegister(@RequestBody @Valid RegisterSeedDto registerSeedDto) {
+    public ResponseEntity<?> testRegister(@RequestBody @Valid RegisterSeedDto registerSeedDto,
+                                          BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Грешка: Потребителят вече съществува!"));
+        }
         try {
             this.userService.register(registerSeedDto);
             return ResponseEntity.ok(Map.of("message", "User registered successfully!"));

@@ -11,7 +11,7 @@ public class UserEntity extends BaseEntity{
     private String email;
     @Column(nullable = false, name = "password")
     private String password;
-    @Column(nullable = false, name = "full_name")
+    @Column(nullable = false)
     private String username;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

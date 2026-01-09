@@ -44,12 +44,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean isValidEmail(String email) {
-        return !this.userRepository.findByEmail(email).isEmpty();
+        return this.userRepository.findByEmail(email).isEmpty();
     }
 
     @Override
     public boolean isValidUsername(String username) {
-        return !this.userRepository.findByUsername(username).isEmpty();
+        return this.userRepository.findByUsername(username).isEmpty();
     }
 
     @Override
