@@ -17,12 +17,16 @@ public class Document extends BaseEntity{
     private DocumentStatus documentStatus;
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
+    @Lob
+    @Column(name = "content", nullable = false, columnDefinition = "BYTEA")
+    private byte[] content;
 
-    public Document(String filename, String mimeType, DocumentStatus documentStatus, LocalDateTime uploadedAt) {
+    public Document(String filename, String mimeType, DocumentStatus documentStatus, LocalDateTime uploadedAt, byte[] content) {
         this.filename = filename;
         this.mimeType = mimeType;
         this.documentStatus = documentStatus;
         this.uploadedAt = uploadedAt;
+        this.content = content;
     }
 
     public Document() {
@@ -58,5 +62,21 @@ public class Document extends BaseEntity{
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+    public DocumentStatus getDocumentStatus() {
+        return documentStatus;
+    }
+
+    public void setDocumentStatus(DocumentStatus documentStatus) {
+        this.documentStatus = documentStatus;
+    }
+
+    public byte[] getContent() {
+        return content;
+    }
+
+    public void setContent(byte[] content) {
+        this.content = content;
     }
 }

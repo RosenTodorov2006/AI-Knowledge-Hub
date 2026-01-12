@@ -1,6 +1,7 @@
 package org.example.web;
 
 import org.example.models.dtos.exportDtos.ChatDto;
+import org.example.models.dtos.exportDtos.ChatViewDto;
 import org.example.services.DashboardService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -38,15 +39,20 @@ public class DashboardController {
     }
     @PostMapping("/create")
     public String processCreateChat(@RequestParam("file") MultipartFile file,
-                                    @RequestParam("title") String title,
+                                    Principal principal,
                                     RedirectAttributes redirectAttributes) {
-
         if (file.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Please select a file to upload.");
+            redirectAttributes.addFlashAttribute("error", "Please select a file.");
             return "redirect:/chats/create";
         }
-        // service logic
-        return "redirect:/chats/"; //+newChatId
+        try {
+            ChatViewDto newChatDto = dashboardService.startNewChat(file, principal.getName());
+            redirectAttributes.addFlashAttribute("success", "Chat successfully started for: " + newChatDto.getDocumentFilename());
+            return "redirect:/chats/" + newChatDto.getId();
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Processing error: " + e.getMessage());
+            return "redirect:/chats/create";
+        }
     }
     @PostMapping("/{id}/send")
     public String sendMessage(@PathVariable Long id,
