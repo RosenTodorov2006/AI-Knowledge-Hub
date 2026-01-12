@@ -1,9 +1,7 @@
 package org.example.models.entities;
 
 import jakarta.persistence.*;
-import org.example.models.entities.BaseEntity;
 import org.example.models.entities.enums.ProcessingJobStage;
-import org.example.models.entities.enums.ProcessingJobStatus;
 
 @Entity
 @Table(name = "processing_jobs")

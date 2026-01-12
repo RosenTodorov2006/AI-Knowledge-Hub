@@ -2,6 +2,7 @@ package org.example.web;
 
 import org.example.models.dtos.exportDtos.ChatDto;
 import org.example.models.dtos.exportDtos.ChatViewDto;
+import org.example.services.ChatService;
 import org.example.services.DashboardService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,9 +16,11 @@ import java.util.List;
 @Controller
 public class DashboardController {
     private final DashboardService dashboardService;
+    private final ChatService chatService;
 
-    public DashboardController(DashboardService dashboardService) {
+    public DashboardController(DashboardService dashboardService, ChatService chatService) {
         this.dashboardService = dashboardService;
+        this.chatService = chatService;
     }
 
     @GetMapping("/dashboard")
@@ -46,7 +49,7 @@ public class DashboardController {
             return "redirect:/chats/create";
         }
         try {
-            ChatViewDto newChatDto = dashboardService.startNewChat(file, principal.getName());
+            ChatViewDto newChatDto = chatService.startNewChat(file, principal.getName());
             redirectAttributes.addFlashAttribute("success", "Chat successfully started for: " + newChatDto.getDocumentFilename());
             return "redirect:/chats/" + newChatDto.getId();
         } catch (Exception e) {

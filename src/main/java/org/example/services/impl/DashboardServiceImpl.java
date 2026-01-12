@@ -26,13 +26,11 @@ public class DashboardServiceImpl implements DashboardService {
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-    private final DocumentRepository documentRepository;
 
-    public DashboardServiceImpl(ChatRepository chatRepository, UserRepository userRepository, ModelMapper modelMapper, DocumentRepository documentRepository) {
+    public DashboardServiceImpl(ChatRepository chatRepository, UserRepository userRepository, ModelMapper modelMapper) {
         this.chatRepository = chatRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
-        this.documentRepository = documentRepository;
     }
 
     @Override
@@ -52,37 +50,5 @@ public class DashboardServiceImpl implements DashboardService {
             chatDtoList.add(mappedChatDto);
         }
         return chatDtoList;
-    }
-
-    @Override
-    @Transactional
-    public ChatViewDto startNewChat(MultipartFile file, String userEmail) throws IOException {
-        UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Потребителят не е намерен!"));
-
-        Document document = new Document();
-        document.setFilename(file.getOriginalFilename());
-        document.setMimeType(file.getContentType());
-        document.setStatus(DocumentStatus.UPLOADED);
-        document.setUploadedAt(LocalDateTime.now());
-        document.setContent(file.getBytes());
-        document = documentRepository.save(document);
-
-        Chat chat = new Chat();
-        chat.setTitle("Чат върху " + file.getOriginalFilename());
-        chat.setUser(user);
-        chat.setDocument(document);
-        chat.setLastMessageAt(LocalDateTime.now());
-
-        chat = chatRepository.save(chat);
-
-        // Do it with ModelMapper after everything is ready
-        ChatViewDto chatViewDto = new ChatViewDto();
-        chatViewDto.setId(chat.getId());
-        chatViewDto.setTitle(chat.getTitle());
-        chatViewDto.setDocumentFilename(document.getFilename());
-        chatViewDto.setLastMessageAt(chat.getLastMessageAt());
-
-        return chatViewDto;
     }
 }
