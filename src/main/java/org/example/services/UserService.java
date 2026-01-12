@@ -7,8 +7,8 @@ import org.example.models.dtos.importDtos.RegisterSeedDto;
 
 public interface UserService {
     void register(RegisterSeedDto registerSeedDto);
-    boolean isValidEmail(String email);
-    boolean isValidUsername(String username);
+    boolean isEmailUnique(String email);
+    boolean isUsernameUnique(String username);
 
     void changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
 

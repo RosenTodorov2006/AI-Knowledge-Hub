@@ -47,6 +47,7 @@ public class SettingsController {
             return "redirect:/settings";
         }
         userService.changeProfileInfo(changeProfileDto, principal.getName());
+        // фиелд
         return "redirect:/settings";
     }
     @PostMapping("/changeUserPassword")

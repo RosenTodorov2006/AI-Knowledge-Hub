@@ -32,9 +32,9 @@ public class UserServiceImpl implements UserService {
     public void register(RegisterSeedDto registerSeedDto) {
         UserEntity currentUser = this.modelMapper.map(registerSeedDto, UserEntity.class);
         currentUser.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
-        if(this.userRepository.count()==0){
+        if (this.userRepository.count() == 0) {
             currentUser.setRole(ApplicationRole.ADMIN);
-        }else{
+        } else {
             currentUser.setRole(ApplicationRole.USER);
         }
         currentUser.setActive(true);
@@ -43,23 +43,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean isValidEmail(String email) {
+    public boolean isEmailUnique(String email) {
         return this.userRepository.findByEmail(email).isEmpty();
     }
 
     @Override
-    public boolean isValidUsername(String username) {
+    public boolean isUsernameUnique(String username) {
         return this.userRepository.findByUsername(username).isEmpty();
     }
 
     @Override
     @Transactional
     public void changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
-        Optional<UserEntity> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isEmpty()){
-            throw new NullPointerException("USER NOT FOUND!");
-        }
-        UserEntity userEntity = optionalUser.get();
+        UserEntity userEntity = this.userRepository.findByEmail(email).orElseThrow(() -> new NullPointerException("USER NOT FOUND!"));
         userEntity.setEmail(changeProfileDto.getEmail());
         userEntity.setFullName(changeProfileDto.getFullName());
     }
@@ -67,19 +63,16 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
-        Optional<UserEntity> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isEmpty()){
-            throw new NullPointerException("USER NOT FOUND!");
-        }
-        UserEntity userEntity = optionalUser.get();
+        UserEntity userEntity = this.userRepository.findByEmail(email).orElseThrow(() -> new NullPointerException("USER NOT FOUND!"));
         userEntity.setPassword(passwordEncoder.encode(changeUserPasswordDto.getPassword()));
     }
 
     @Override
     @Transactional
-    public void deleteUser (String email) {
+    public void deleteUser(String email) {
         UserEntity userEntity = this.userRepository.findByEmail(email)
-                .orElseThrow(() -> new NullPointerException("USER NOT FOUND!"));
+                // error message
+                .orElseThrow(() -> new NullPointerException("USER DOES NOT EXIST!"));
         userEntity.setActive(false);
     }
 
