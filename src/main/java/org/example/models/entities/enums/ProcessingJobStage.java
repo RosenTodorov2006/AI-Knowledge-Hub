@@ -1,5 +1,5 @@
 package org.example.models.entities.enums;
 
 public enum ProcessingJobStage {
-    UPLOADED, READ, SPLIT, EMBEDDED
+    UPLOADED, READ, SPLIT, EMBEDDED, PARSING, COMPLETED, INDEXING, FAILED
 }

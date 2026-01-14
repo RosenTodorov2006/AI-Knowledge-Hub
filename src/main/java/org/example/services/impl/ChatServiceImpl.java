@@ -13,6 +13,7 @@ import org.example.repositories.DocumentRepository;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.repositories.UserRepository;
 import org.example.services.ChatService;
+import org.example.services.DocumentProcessingService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,12 +26,14 @@ public class ChatServiceImpl implements ChatService {
     private final DocumentRepository documentRepository;
     private final ChatRepository chatRepository;
     private final ProcessingJobRepository processingJobRepository;
+    private final DocumentProcessingService documentProcessingService;
 
-    public ChatServiceImpl(UserRepository userRepository, DocumentRepository documentRepository, ChatRepository chatRepository, ProcessingJobRepository processingJobRepository) {
+    public ChatServiceImpl(UserRepository userRepository, DocumentRepository documentRepository, ChatRepository chatRepository, ProcessingJobRepository processingJobRepository, DocumentProcessingServiceImpl documentProcessingService) {
         this.userRepository = userRepository;
         this.documentRepository = documentRepository;
         this.chatRepository = chatRepository;
         this.processingJobRepository = processingJobRepository;
+        this.documentProcessingService = documentProcessingService;
     }
 
     @Override
@@ -65,8 +68,7 @@ public class ChatServiceImpl implements ChatService {
         chatViewDto.setDocumentFilename(document.getFilename());
         chatViewDto.setLastMessageAt(chat.getLastMessageAt());
 
-        // 6. СТАРТИРАНЕ НА АСИНХРОННАТА ОБРАБОТКА (Следващата ни голяма стъпка)
-        // documentProcessingService.process(document.getId());
+         documentProcessingService.processDocument(document.getId());
 
         return chatViewDto;
     }

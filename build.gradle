@@ -34,10 +34,13 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     // https://mvnrepository.com/artifact/com.pgvector/pgvector
     implementation 'com.pgvector:pgvector:0.1.6'
+    implementation 'org.hibernate.orm:hibernate-vector:6.4.4.Final'
 
     // 1. За ЧАТ с ChatGPT (OpenAI)
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
     // 2. За ЛОКАЛНИ ВЕКТОРИ
+    implementation 'org.springframework.ai:spring-ai-transformers-spring-boot-starter'
+    implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-M1'
     implementation 'org.springframework.ai:spring-ai-transformers-spring-boot-starter'
 
     // Apache PDFBox - стандартът за четене на PDF в Java

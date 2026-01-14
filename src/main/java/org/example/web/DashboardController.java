@@ -14,6 +14,7 @@ import java.security.Principal;
 import java.util.List;
 
 @Controller
+@RequestMapping("/chats")
 public class DashboardController {
     private final DashboardService dashboardService;
     private final ChatService chatService;

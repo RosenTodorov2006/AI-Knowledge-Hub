@@ -71,7 +71,6 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(String email) {
         UserEntity userEntity = this.userRepository.findByEmail(email)
-                // error message
                 .orElseThrow(() -> new NullPointerException("USER DOES NOT EXIST!"));
         userEntity.setActive(false);
     }
