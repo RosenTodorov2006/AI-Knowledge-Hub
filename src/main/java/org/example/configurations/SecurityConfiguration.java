@@ -18,7 +18,7 @@ public class SecurityConfiguration {
                         authorizeRequests
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                                 .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features").permitAll()
-                                // Пускам тестовите API-та без логване
+                                .requestMatchers("/api/chats/**").permitAll()
                                 .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
                                 .anyRequest().authenticated()
                 )

@@ -2,6 +2,8 @@ package org.example.models.entities;
 
 import jakarta.persistence.*;
 import org.example.models.entities.enums.DocumentStatus;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.type.descriptor.jdbc.VarbinaryJdbcType;
 
 import java.time.LocalDateTime;
 
@@ -17,8 +19,8 @@ public class Document extends BaseEntity{
     private DocumentStatus documentStatus;
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
-    @Lob
-    @Column(name = "content", nullable = false, columnDefinition = "BYTEA")
+    @Column(name = "content", nullable = false)
+    @JdbcType(VarbinaryJdbcType.class)
     private byte[] content;
 
     public Document(String filename, String mimeType, DocumentStatus documentStatus, LocalDateTime uploadedAt, byte[] content) {
