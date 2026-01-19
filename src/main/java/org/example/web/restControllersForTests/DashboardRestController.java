@@ -1,7 +1,9 @@
 package org.example.web.restControllersForTests;
 
 import org.example.models.dtos.exportDtos.ChatDto;
+import org.example.models.dtos.exportDtos.ChatResponseDto;
 import org.example.models.dtos.exportDtos.ChatViewDto;
+import org.example.models.dtos.importDtos.ChatRequestDto;
 import org.example.services.ChatService;
 import org.example.services.DashboardService;
 import org.springframework.http.HttpStatus;
@@ -43,5 +45,14 @@ public class DashboardRestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Processing error: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/{id}/send")
+    public ResponseEntity<ChatResponseDto> sendMessage(
+            @PathVariable Long id,
+            @RequestBody ChatRequestDto requestDto) {
+        ChatResponseDto response = chatService.generateResponse(id, requestDto.getMessage());
+
+        return ResponseEntity.ok(response);
     }
 }

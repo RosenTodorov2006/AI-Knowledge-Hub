@@ -21,12 +21,16 @@ public class Chat extends BaseEntity{
     @JoinColumn(name = "document_id", nullable = false)
     private Document document;
 
-    public Chat(String title, LocalDateTime lastMessageAt, UserEntity userEntity, List<Message> messages, Document document) {
+    @Column(name = "openai_thread_id")
+    private String openAiThreadId;
+
+    public Chat(String title, LocalDateTime lastMessageAt, UserEntity userEntity, List<Message> messages, Document document, String openAiThreadId) {
         this.title = title;
         this.lastMessageAt = lastMessageAt;
         this.userEntity = userEntity;
         this.messages = messages;
         this.document = document;
+        this.openAiThreadId = openAiThreadId;
     }
 
     public Chat() {
@@ -70,5 +74,21 @@ public class Chat extends BaseEntity{
 
     public void setDocument(Document document) {
         this.document = document;
+    }
+
+    public UserEntity getUserEntity() {
+        return userEntity;
+    }
+
+    public void setUserEntity(UserEntity userEntity) {
+        this.userEntity = userEntity;
+    }
+
+    public String getOpenAiThreadId() {
+        return openAiThreadId;
+    }
+
+    public void setOpenAiThreadId(String openAiThreadId) {
+        this.openAiThreadId = openAiThreadId;
     }
 }

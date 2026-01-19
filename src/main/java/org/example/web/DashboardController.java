@@ -61,11 +61,18 @@ public class DashboardController {
     @PostMapping("/{id}/send")
     public String sendMessage(@PathVariable Long id,
                               @RequestParam("message") String content) {
-
         if (content == null || content.trim().isEmpty()) {
             return "redirect:/chats/" + id;
         }
-        // sending the question to openAI along with the vector and adding the answer and question to the service's message list
+
+        try {
+            chatService.generateResponse(id, content);
+
+        } catch (Exception e) {
+            System.err.println("Error generating AI response: " + e.getMessage());
+            return "redirect:/chats/" + id + "?error=true";
+        }
+
         return "redirect:/chats/" + id;
     }
 }
