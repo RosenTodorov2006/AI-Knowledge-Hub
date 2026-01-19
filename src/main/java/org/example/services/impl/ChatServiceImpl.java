@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -211,17 +212,26 @@ public class ChatServiceImpl implements ChatService {
         Chat chat = chatRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        // change to modelMapper
         ChatViewDto dto = new ChatViewDto();
         dto.setId(chat.getId());
         dto.setTitle(chat.getTitle());
         dto.setDocumentFilename(chat.getDocument().getFilename());
 
+        if (chat.getMessages() != null && !chat.getMessages().isEmpty()) {
+            LocalDateTime lastDate = chat.getMessages().stream()
+                    .map(Message::getCreatedAt)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+            dto.setLastMessageAt(lastDate);
+        }
+
         List<MessageResponseDto> messageDtos = chat.getMessages().stream()
                 .map(m -> new MessageResponseDto(m.getContent(), m.getRole().name(), m.getCreatedAt()))
+                .sorted(Comparator.comparing(MessageResponseDto::getCreatedAt))
                 .collect(Collectors.toList());
 
         dto.setMessages(messageDtos);
+
         return dto;
     }
 }

@@ -22,7 +22,6 @@ public class SecurityConfiguration {
                                 .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
                                 .anyRequest().authenticated()
                 )
-                // Позволявам на Postman да се логне с имейл и парола без редиректи
                 .httpBasic(org.springframework.security.config.Customizer.withDefaults())
                 .formLogin(formLogin ->
                         formLogin

@@ -68,8 +68,4 @@ public class UserController {
         model.addAttribute("loginSeedDto", new LoginSeedDto());
         return "login";
     }
-    @GetMapping("/admin")
-    public String admin(Model model){
-        return "admin";
-    }
 }
