@@ -33,12 +33,12 @@ public class DashboardController {
 
     @GetMapping("/{id}")
     public String viewChat(@PathVariable Long id, Model model) {
-        // retrieving current chat from the database via the service
+        ChatViewDto chat = chatService.getChatDetails(id);
+        model.addAttribute("chat", chat);
         return "chat-split-view";
     }
     @GetMapping("/create")
-    public String createChat(Model model) {
-        // service logic
+    public String createChat() {
         return "chat-create";
     }
     @PostMapping("/create")

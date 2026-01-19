@@ -55,4 +55,10 @@ public class DashboardRestController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ChatViewDto> getChatDetails(@PathVariable Long id) {
+        ChatViewDto chatDetails = chatService.getChatDetails(id);
+        return ResponseEntity.ok(chatDetails);
+    }
 }

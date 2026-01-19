@@ -3,6 +3,7 @@ package org.example.services.impl;
 import jakarta.transaction.Transactional;
 import org.example.models.dtos.exportDtos.ChatResponseDto;
 import org.example.models.dtos.exportDtos.ChatViewDto;
+import org.example.models.dtos.exportDtos.MessageResponseDto;
 import org.example.models.entities.*;
 import org.example.models.entities.enums.DocumentStatus;
 import org.example.models.entities.enums.MessageRole;
@@ -203,5 +204,24 @@ public class ChatServiceImpl implements ChatService {
         float[] floats = new float[doubles.size()];
         for (int i = 0; i < doubles.size(); i++) floats[i] = doubles.get(i).floatValue();
         return floats;
+    }
+
+    @Override
+    public ChatViewDto getChatDetails(Long id) {
+        Chat chat = chatRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+        // change to modelMapper
+        ChatViewDto dto = new ChatViewDto();
+        dto.setId(chat.getId());
+        dto.setTitle(chat.getTitle());
+        dto.setDocumentFilename(chat.getDocument().getFilename());
+
+        List<MessageResponseDto> messageDtos = chat.getMessages().stream()
+                .map(m -> new MessageResponseDto(m.getContent(), m.getRole().name(), m.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        dto.setMessages(messageDtos);
+        return dto;
     }
 }

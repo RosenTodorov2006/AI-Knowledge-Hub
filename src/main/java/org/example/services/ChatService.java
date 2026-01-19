@@ -10,4 +10,5 @@ import java.io.IOException;
 public interface ChatService {
     ChatViewDto startNewChat(MultipartFile file, String name) throws IOException;
     ChatResponseDto generateResponse(Long chatId, String content);
+    ChatViewDto getChatDetails(Long id);
 }

@@ -1,12 +1,14 @@
 package org.example.models.dtos.exportDtos;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ChatViewDto {
     private long id;
     private String title;
     private String documentFilename;
     private LocalDateTime lastMessageAt;
+    private List<MessageResponseDto> messages;
 
     public long getId() {
         return id;
@@ -38,5 +40,13 @@ public class ChatViewDto {
 
     public void setLastMessageAt(LocalDateTime lastMessageAt) {
         this.lastMessageAt = lastMessageAt;
+    }
+
+    public List<MessageResponseDto> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<MessageResponseDto> messages) {
+        this.messages = messages;
     }
 }
