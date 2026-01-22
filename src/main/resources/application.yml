@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: knowledge-hub
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true
+
+  # --- 1. НАСТРОЙКИ НА БАЗАТА ДАННИ ---
+  datasource:
+    url: jdbc:postgresql://localhost:5435/ai_knowledge_hub_db
+    username: postgres
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+
+  # --- 2. ИНИЦИАЛИЗАЦИЯ (За да се пусне vector extension-a) ---
+  sql:
+    init:
+      mode: always # <--- ВАЖНО: Задължително пуска schema.sql при старт
+
+  # --- 3. HIBERNATE / JPA ---
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true # Пуска schema.sql ПРЕДИ Hibernate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  # --- 4. ЛИМИТИ ЗА КАЧВАНЕ НА ФАЙЛОВЕ ---
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+  # --- 5. SPRING AI НАСТРОЙКИ ---
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY} # <--- Използваме променлива за сигурност
+      chat:
+        options:
+          model: gpt-4o-mini-2024-07-18
+
+    # Вектори: Локално генериране за твоя лаптоп [cite: 2026-01-18]
+    embedding:
+      transformer:
+        # Spring сам ще си изтегли MiniLM модела и ще го ползва локално
+        cache:
+          directory: ${user.home}/.spring-ai/models
+
+# --- 6. LOGGING ---
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
