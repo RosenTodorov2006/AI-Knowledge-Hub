@@ -47,7 +47,6 @@ public class MessageServiceImpl implements MessageService {
             MessageContextSource source = new MessageContextSource();
             source.setMessage(message);
 
-            // Вземаме референция към чанка чрез неговото ID
             source.setChunk(documentChunkRepository.getReferenceById(res.getId()));
 
             source.setScore(res.getSimilarity());

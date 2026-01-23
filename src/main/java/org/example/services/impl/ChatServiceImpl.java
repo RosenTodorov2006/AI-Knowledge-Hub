@@ -72,7 +72,7 @@ public class ChatServiceImpl implements ChatService {
         document.setMimeType(file.getContentType());
         document.setStatus(DocumentStatus.UPLOADED);
         document.setUploadedAt(LocalDateTime.now());
-        document.setContent(file.getBytes()); // Вече добавихме това поле
+        document.setContent(file.getBytes());
         document = documentRepository.save(document);
 
         ProcessingJob job = new ProcessingJob();
@@ -121,7 +121,7 @@ public class ChatServiceImpl implements ChatService {
                 chat.getDocument().getId(), queryVector, 5);
 
         String contextText = topResults.stream()
-                .map(ChunkSearchResult::getContent) // Директно взимаме текста
+                .map(ChunkSearchResult::getContent)
                 .collect(Collectors.joining("\n---\n"));
 
         if (chat.getOpenAiThreadId() == null) {
@@ -152,7 +152,7 @@ public class ChatServiceImpl implements ChatService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + apiKey);
         headers.set("Content-Type", "application/json");
-        headers.set("OpenAI-Beta", "assistants=v2"); // Задължително за Assistants API
+        headers.set("OpenAI-Beta", "assistants=v2");
         return headers;
     }
 

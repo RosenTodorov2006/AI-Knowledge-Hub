@@ -13,6 +13,7 @@ import org.example.repositories.ProcessingJobRepository;
 import org.example.services.DocumentProcessingService;
 import org.example.validation.annotation.TrackProcessing;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 
 @Service
@@ -29,13 +31,16 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     private final ProcessingJobRepository processingJobRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final EmbeddingModel embeddingModel;
+    @Qualifier("taskExecutor")
+    private final Executor taskExecutor;
 
     public DocumentProcessingServiceImpl(ProcessingJobRepository processingJobRepository,
                                          DocumentChunkRepository documentChunkRepository,
-                                         EmbeddingModel embeddingModel) {
+                                         EmbeddingModel embeddingModel, Executor taskExecutor) {
         this.processingJobRepository = processingJobRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.embeddingModel = embeddingModel;
+        this.taskExecutor = taskExecutor;
     }
 
     @Override
@@ -78,7 +83,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
             String sentence = text.substring(start, end);
 
-            if (currentChunk.length() + sentence.length() > limit && currentChunk.length() > 0) {
+            if (currentChunk.length() + sentence.length() > limit && !currentChunk.isEmpty()) {
                 chunks.add(currentChunk.toString().trim());
 
                 int lastDot = currentChunk.lastIndexOf(". ");
@@ -95,7 +100,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
 
     private void processChunks(Document document, String text) {
         List<String> semanticChunks = prepareSemanticChunks(text, 800);
-        Long docId = document.getId(); // Взимаме само ID-то
+        Long docId = document.getId();
 
         List<CompletableFuture<DocumentChunk>> futures = semanticChunks.stream()
                 .map(content -> CompletableFuture.supplyAsync(() -> {
@@ -103,16 +108,16 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
 
                     DocumentChunk chunk = new DocumentChunk();
 
-                    // Създаваме нов обект, за да не пречим на Hibernate сесията
                     Document docProxy = new Document();
                     docProxy.setId(docId);
-
                     chunk.setDocument(docProxy);
+
                     chunk.setContent(content);
                     chunk.setEmbedding(vector);
                     chunk.setTokenCount(content.split("\\s+").length);
+
                     return chunk;
-                }))
+                }, taskExecutor))
                 .toList();
 
         List<DocumentChunk> allChunks = futures.stream()
@@ -120,7 +125,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
                 .toList();
 
         documentChunkRepository.saveAll(allChunks);
-        documentChunkRepository.flush(); // Добави това, за да форсираш записа към базата
+        documentChunkRepository.flush();
     }
 
     private void updateJobStage(ProcessingJob job, ProcessingJobStage stage) {

@@ -40,7 +40,6 @@ public class AdminServiceImpl implements AdminService {
             dto.setJobId("#JOB-" + job.getId());
             dto.setFileName(job.getDocument().getFilename());
 
-            // Пътят до имейла: Job -> Document -> Chat -> UserEntity
             String email = chatRepository.findByDocument(job.getDocument())
                     .map(chat -> chat.getUserEntity().getEmail())
                     .orElse("System / Orphaned");
