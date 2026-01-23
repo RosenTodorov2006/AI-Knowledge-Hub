@@ -17,6 +17,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                                .requestMatchers("/img/**").permitAll()
                                 .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features").permitAll()
                                 .requestMatchers("/api/chats/**").permitAll()
                                 .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
@@ -28,8 +29,8 @@ public class SecurityConfiguration {
                                 .loginPage("/login")
                                 .usernameParameter("email")
                                 .passwordParameter("password")
-                                .defaultSuccessUrl("/", true)
-                                .failureForwardUrl("/login-error") // failureUrl -> failureForwardUrl за по-добра работа
+                                .defaultSuccessUrl("/dashboard", true)
+                                .failureUrl("/login-error")
                                 .permitAll()
                 )
                 .logout(logout ->
