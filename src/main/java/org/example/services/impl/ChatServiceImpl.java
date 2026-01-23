@@ -147,6 +147,11 @@ public class ChatServiceImpl implements ChatService {
         return new ChatResponseDto(aiAnswer, aiMessage.getId());
     }
 
+    private String createThread() {
+        HttpEntity<String> entity = new HttpEntity<>("{}", getHeaders());
+        Map<String, Object> response = restTemplate.postForObject("https://api.openai.com/v1/threads", entity, Map.class);
+        return (String) response.get("id");
+    }
 
     private HttpHeaders getHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -154,12 +159,6 @@ public class ChatServiceImpl implements ChatService {
         headers.set("Content-Type", "application/json");
         headers.set("OpenAI-Beta", "assistants=v2");
         return headers;
-    }
-
-    private String createThread() {
-        HttpEntity<String> entity = new HttpEntity<>("{}", getHeaders());
-        Map<String, Object> response = restTemplate.postForObject("https://api.openai.com/v1/threads", entity, Map.class);
-        return (String) response.get("id");
     }
 
     private void addMessageToThread(String threadId, String content) {

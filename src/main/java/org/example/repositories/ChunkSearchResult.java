@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ChunkSearchResult {
-    Long getId();         // Трябва ни за връзката в базата
-    String getContent();  // Трябва ни за контекста на AI
+    Long getId();
+    String getContent();
     Double getSimilarity();
 }

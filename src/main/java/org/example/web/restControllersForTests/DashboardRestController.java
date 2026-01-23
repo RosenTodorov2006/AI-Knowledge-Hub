@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/chats") // Изчистен и кратък път
+@RequestMapping("/api/chats")
 public class DashboardRestController {
     private final DashboardService dashboardService;
     private final ChatService chatService;
