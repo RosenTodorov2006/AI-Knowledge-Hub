@@ -1,14 +1,18 @@
 package org.example.models.dtos.exportDtos;
 
+import org.example.models.entities.enums.ProcessingJobStage;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class ChatViewDto {
     private long id;
+    private long documentId;
     private String title;
     private String documentFilename;
     private LocalDateTime lastMessageAt;
     private List<MessageResponseDto> messages;
+    private ProcessingJobStage stage;
 
     public long getId() {
         return id;
@@ -48,5 +52,21 @@ public class ChatViewDto {
 
     public void setMessages(List<MessageResponseDto> messages) {
         this.messages = messages;
+    }
+
+    public ProcessingJobStage getStage() {
+        return stage;
+    }
+
+    public void setStage(ProcessingJobStage stage) {
+        this.stage = stage;
+    }
+
+    public long getDocumentId() {
+        return documentId;
+    }
+
+    public void setDocumentId(long documentId) {
+        this.documentId = documentId;
     }
 }

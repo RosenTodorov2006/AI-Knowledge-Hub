@@ -14,7 +14,6 @@ import java.security.Principal;
 import java.util.List;
 
 @Controller
-@RequestMapping("/chats")
 public class DashboardController {
     private final DashboardService dashboardService;
     private final ChatService chatService;
@@ -31,34 +30,34 @@ public class DashboardController {
         return "dashboard";
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/chats/{id}")
     public String viewChat(@PathVariable Long id, Model model) {
         ChatViewDto chat = chatService.getChatDetails(id);
         model.addAttribute("chat", chat);
-        return "chat-split-view";
+        return "chat";
     }
-    @GetMapping("/create")
-    public String createChat() {
-        return "chat-create";
-    }
-    @PostMapping("/create")
+
+    @PostMapping("/chats/create")
     public String processCreateChat(@RequestParam("file") MultipartFile file,
                                     Principal principal,
                                     RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Please select a file.");
-            return "redirect:/chats/create";
+            return "redirect:/dashboard";
         }
+
         try {
             ChatViewDto newChatDto = chatService.startNewChat(file, principal.getName());
-            redirectAttributes.addFlashAttribute("success", "Chat successfully started for: " + newChatDto.getDocumentFilename());
+
             return "redirect:/chats/" + newChatDto.getId();
+
         } catch (Exception e) {
+            System.err.println("Error creating chat: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Processing error: " + e.getMessage());
-            return "redirect:/chats/create";
+            return "redirect:/dashboard";
         }
     }
-    @PostMapping("/{id}/send")
+    @PostMapping("/chats/{id}/send")
     public String sendMessage(@PathVariable Long id,
                               @RequestParam("message") String content) {
         if (content == null || content.trim().isEmpty()) {
@@ -73,6 +72,6 @@ public class DashboardController {
             return "redirect:/chats/" + id + "?error=true";
         }
 
-        return "redirect:/chats/" + id;
+        return "redirect:/chats/" + id + "#bottom-anchor";
     }
 }

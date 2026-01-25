@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "documents")
-public class Document extends BaseEntity{
+public class Document extends BaseEntity {
     @Column(nullable = false)
     private String filename;
     @Column(nullable = false, name = "mime_type")
@@ -23,6 +23,12 @@ public class Document extends BaseEntity{
     @JdbcType(VarbinaryJdbcType.class)
     private byte[] content;
 
+    @OneToOne(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ProcessingJob processingJob;
+
+    public Document() {
+    }
+
     public Document(String filename, String mimeType, DocumentStatus documentStatus, LocalDateTime uploadedAt, byte[] content) {
         this.filename = filename;
         this.mimeType = mimeType;
@@ -31,7 +37,12 @@ public class Document extends BaseEntity{
         this.content = content;
     }
 
-    public Document() {
+    public ProcessingJob getProcessingJob() {
+        return processingJob;
+    }
+
+    public void setProcessingJob(ProcessingJob processingJob) {
+        this.processingJob = processingJob;
     }
 
     public String getFilename() {
@@ -50,11 +61,11 @@ public class Document extends BaseEntity{
         this.mimeType = mimeType;
     }
 
-    public DocumentStatus getStatus() {
+    public DocumentStatus getDocumentStatus() {
         return documentStatus;
     }
 
-    public void setStatus(DocumentStatus documentStatus) {
+    public void setDocumentStatus(DocumentStatus documentStatus) {
         this.documentStatus = documentStatus;
     }
 
@@ -64,14 +75,6 @@ public class Document extends BaseEntity{
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
-    }
-
-    public DocumentStatus getDocumentStatus() {
-        return documentStatus;
-    }
-
-    public void setDocumentStatus(DocumentStatus documentStatus) {
-        this.documentStatus = documentStatus;
     }
 
     public byte[] getContent() {

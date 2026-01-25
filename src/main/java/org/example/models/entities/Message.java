@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.example.models.entities.enums.MessageRole;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "messages")
@@ -19,11 +21,15 @@ public class Message extends BaseEntity{
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
 
-    public Message(MessageRole role, String content, LocalDateTime createdAt, Chat chat) {
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MessageContextSource> contextSources = new ArrayList<>();
+
+    public Message(MessageRole role, String content, LocalDateTime createdAt, Chat chat, List<MessageContextSource> contextSources) {
         this.role = role;
         this.content = content;
         this.createdAt = createdAt;
         this.chat = chat;
+        this.contextSources = contextSources;
     }
 
     public Message() {
@@ -59,5 +65,13 @@ public class Message extends BaseEntity{
 
     public void setChat(Chat chat) {
         this.chat = chat;
+    }
+
+    public List<MessageContextSource> getContextSources() {
+        return contextSources;
+    }
+
+    public void setContextSources(List<MessageContextSource> contextSources) {
+        this.contextSources = contextSources;
     }
 }

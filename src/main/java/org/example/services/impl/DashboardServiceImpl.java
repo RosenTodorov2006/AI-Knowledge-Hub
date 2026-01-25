@@ -45,7 +45,7 @@ public class DashboardServiceImpl implements DashboardService {
         for (Chat chat : currentChats){
             ChatDto mappedChatDto = this.modelMapper.map(chat, ChatDto.class);
             mappedChatDto.setFilename(chat.getDocument().getFilename());
-            mappedChatDto.setDocumentStatus(chat.getDocument().getStatus());
+            mappedChatDto.setDocumentStatus(chat.getDocument().getDocumentStatus());
             mappedChatDto.setUploadedAt(chat.getDocument().getUploadedAt());
             chatDtoList.add(mappedChatDto);
         }

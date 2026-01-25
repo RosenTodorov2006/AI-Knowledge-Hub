@@ -46,9 +46,7 @@ public class MessageServiceImpl implements MessageService {
         for (ChunkSearchResult res : searchResults) {
             MessageContextSource source = new MessageContextSource();
             source.setMessage(message);
-
             source.setChunk(documentChunkRepository.getReferenceById(res.getId()));
-
             source.setScore(res.getSimilarity());
             messageContextSourceRepository.save(source);
         }

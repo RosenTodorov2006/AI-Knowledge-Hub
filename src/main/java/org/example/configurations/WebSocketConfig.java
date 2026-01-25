@@ -11,19 +11,14 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Дефинираме "брокера". Всичко, което започва с /topic, 
-        // сървърът ще може да изпраща към браузъра.
-        config.enableSimpleBroker("/topic");
-
-        // Префикс за съобщения, които идват ОТ браузъра КЪМ сървъра.
-        config.setApplicationDestinationPrefixes("/app");
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws").withSockJS();
     }
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Това е началният URL, към който JS ще се свърже.
-        // .withSockJS() е за поддръжка на по-стари браузъри.
-        registry.addEndpoint("/ws").withSockJS();
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        // Трябва да имаш "/topic", за да може messagingTemplate да праща съобщения натам
+        registry.enableSimpleBroker("/topic");
+        registry.setApplicationDestinationPrefixes("/app");
     }
 }

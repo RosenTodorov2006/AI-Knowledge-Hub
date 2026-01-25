@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Document - KnowledgeHub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: #F9FAFB; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        .modern-spinner {
+            width: 64px; height: 64px;
+            border: 6px solid #E5E7EB; border-top-color: #5D5DFE;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .status-bar { background: #5D5DFE; color: white; padding: 8px; text-align: center; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; z-index: 10; }
+        .chat-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        .document-viewer { flex: 1; border-right: 1px solid #E5E7EB; display: flex; flex-direction: column; background: #F3F4F6; position: relative; overflow: hidden; }
+        .viewer-header { background: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; flex-shrink: 0; }
+
+        #processingUI {
+            position: absolute; inset: 0; background: #F9FAFB; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px;
+        }
+
+        .chat-panel { width: 45%; display: flex; flex-direction: column; background: white; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+        .bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); word-wrap: break-word; }
+        .ai-bubble { background: #F3F4F6; color: #1F2937; border-bottom-left-radius: 2px; align-self: flex-start; }
+        .user-bubble { background: #5D5DFE; color: white; border-bottom-right-radius: 2px; align-self: flex-end; }
+
+        .chat-footer { padding: 24px; border-top: 1px solid #F3F4F6; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .chat-input { width: 100%; padding: 16px 60px 16px 16px; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.2s; resize: none; height: 56px; }
+        .send-btn { position: absolute; right: 8px; background: #5D5DFE; border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<div class="status-bar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Chatting with: <strong th:text="${chat.documentFilename}">Lecture_Notes.pdf</strong>
+</div>
+
+<div class="chat-container">
+    <section class="document-viewer" id="documentViewer">
+        <div class="viewer-header">
+            <a th:href="@{/dashboard}" class="back-link" style="color: #374151; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back
+            </a>
+            <span style="font-size: 14px; color: #6B7280;" th:text="${chat.documentFilename}">filename.pdf</span>
+        </div>
+
+        <div style="flex: 1; position: relative; width: 100%;">
+            <div id="processingUI" th:style="${chat.stage.name() != 'COMPLETED' ? 'display: flex;' : 'display: none;'}">
+                <div class="modern-spinner"></div>
+                <h2 style="margin-top: 24px; color: #111827; font-size: 20px; font-weight: 700;">Processing Document</h2>
+
+                <div style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; background: white; padding: 8px 16px; border-radius: 24px; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="width: 10px; height: 10px; background: #5D5DFE; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+                        <span id="currentStageText" style="color: #4B5563; font-weight: 700; text-transform: uppercase;" th:text="${chat.stage}">UPLOADED</span>
+                    </div>
+                    <p style="margin-top: 16px; color: #6B7280; font-size: 14px; max-width: 340px; line-height: 1.6;">
+                        The AI engine is currently indexing your file. This process ensures the highest quality for your answers.
+                    </p>
+                </div>
+            </div>
+
+            <div id="documentContent" th:style="${chat.stage.name() == 'COMPLETED' ? 'display: block;' : 'display: none;'}"
+                 style="width: 100%; height: 100%; overflow-y: auto; padding: 40px; background: #F3F4F6;">
+
+                <div th:if="${#lists.isEmpty(chat.messages)}"
+                     style="background: white; max-width: 800px; margin: 0 auto; min-height: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; padding: 60px; border-radius: 8px;">
+
+                    <h1 style="color: #111827; font-size: 24px; margin-bottom: 20px;" th:text="${chat.documentFilename}">Document Preview</h1>
+
+                    <div style="display: flex; align-items: center; gap: 12px; color: #059669; background: #ECFDF5; padding: 16px; border-radius: 8px; margin-bottom: 30px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <span style="font-weight: 600;">The document indexing is complete. [cite: 2026-01-25]</span>
+                    </div>
+
+                    <p style="color: #4B5563; line-height: 1.8; font-size: 15px;">
+                        Your file has been successfully processed and transformed into vector embeddings.
+                        Our AI engine is now ready to answer questions based on the specific content of this document.
+                    </p>
+
+                    <div style="margin-top: 40px; padding: 24px; border: 1px dashed #D1D5DB; border-radius: 12px; text-align: center;">
+                        <p style="color: #6B7280; font-size: 14px;">Ask your first question in the chat panel to begin the analysis.</p>
+                    </div>
+                </div>
+
+                <div th:if="${not #lists.isEmpty(chat.messages)}" style="max-width: 800px; margin: 0 auto;">
+
+                    <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h2 style="color: #111827; font-size: 18px; font-weight: 700;">Reference Sources</h2>
+                            <p style="color: #6B7280; font-size: 13px; margin-top: 4px;">Verified chunks from <span th:text="${chat.documentFilename}">document.pdf</span></p>
+                        </div>
+                        <span style="background: #E0E7FF; color: #4338CA; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Latest Response</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 16px; overflow-y: auto; max-height: 70vh; padding-right: 10px; scrollbar-width: thin; scroll-behavior: smooth;"> ed4
+                        <th:block th:each="msg : ${chat.messages}">
+                            <th:block th:if="${msg.role == 'ASSISTANT' && msgStat.last}">
+
+                                <div th:each="source, iter : ${msg.sources}"
+                                     style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s;">
+
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                        <div style="width: 24px; height: 24px; background: #5D5DFE; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800;" th:text="${iter.count}">1</div>
+                                        <span style="color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Document Excerpt</span>
+                                    </div>
+
+                                    <p style="color: #1F2937; font-size: 14px; line-height: 1.6; font-style: italic; border-left: 3px solid #E5E7EB; padding-left: 16px;"
+                                       th:text="${source}">"Текстът на самия чанк..."</p>
+                                </div>
+
+                                <div th:if="${#lists.isEmpty(msg.sources)}"
+                                     style="background: white; padding: 30px; border-radius: 12px; border: 1px solid #E5E7EB; text-align: center; color: #9CA3AF;">
+                                    <p>The assistant answered using general knowledge for this specific query.</p>
+                                </div>
+
+                            </th:block>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="chat-panel">
+        <div class="chat-header">
+            <h2 style="font-size: 18px; font-weight: 700;" th:text="${chat.title}">Chat Title</h2>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div th:each="msg : ${chat.messages}"
+                 th:class="${msg.role == 'ASSISTANT' ? 'bubble ai-bubble' : 'bubble user-bubble'}"
+                 th:text="${msg.content}"></div>
+            <div id="bottom-anchor" style="height: 1px;"></div>
+        </div>
+        <div class="chat-footer">
+            <form th:action="@{/chats/{id}/send(id=${chat.id})}" method="post" id="messageForm">
+                <div class="input-wrapper">
+                    <textarea name="message" class="chat-input" id="userInput" placeholder="Ask a question..." required></textarea>
+                    <button type="submit" class="send-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const docId = [[${chat.documentId}]];
+        const initialStage = [[${chat.stage.name()}]];
+        const chatMessages = document.getElementById('chatMessages');
+
+        // 1. Дефинираме функцията тук, за да "вижда" chatMessages
+        function appendSuccessMessage() {
+            if (!chatMessages) return;
+            const msg = document.createElement('div');
+            // Използваме твоя нов професионален стил
+            msg.style.cssText = "align-self: flex-start; max-width: 80%; margin-bottom: 16px; display: flex; flex-direction: column; gap: 4px;";
+            msg.innerHTML = `
+                <div class="bubble ai-bubble" style="border-left: 4px solid #5D5DFE; background: #F3F4F6; padding: 12px 16px; border-radius: 12px 12px 12px 2px; font-size: 14px;">
+                    🚀 **Vectorization finished!** The document has been successfully indexed and is ready for analysis.
+                </div>
+                <span style="font-size: 11px; color: #9CA3AF; align-self: flex-start;">Just now</span>
+            `;
+            chatMessages.appendChild(msg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        if (initialStage !== 'COMPLETED') {
+            console.log("WebSocket: Listening on Document ID: " + docId);
+            const socket = new SockJS('/ws');
+            const stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, function (frame) {
+                stompClient.subscribe('/topic/processing/' + docId, function (response) {
+                    console.log("WebSocket Received: " + response.body);
+
+                    if (response.body === 'COMPLETED') {
+                        document.getElementById('processingUI').style.display = 'none';
+                        document.getElementById('documentContent').style.display = 'block';
+
+                        // 2. ИЗВИКВАМЕ ТВОЯТА НОВА ФУНКЦИЯ ТУК
+                        appendSuccessMessage();
+
+                        stompClient.disconnect();
+                    } else {
+                        const stageText = document.getElementById('currentStageText');
+                        if (stageText) stageText.textContent = response.body;
+                    }
+                });
+            });
+        }
+    });
+
+    // Enter за изпращане
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('messageForm').submit();
+        }
+    });
+</script>
+</body>
+</html>

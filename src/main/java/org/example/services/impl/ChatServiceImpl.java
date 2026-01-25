@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class ChatServiceImpl implements ChatService {
         Document document = new Document();
         document.setFilename(file.getOriginalFilename());
         document.setMimeType(file.getContentType());
-        document.setStatus(DocumentStatus.UPLOADED);
+        document.setDocumentStatus(DocumentStatus.UPLOADED);
         document.setUploadedAt(LocalDateTime.now());
         document.setContent(file.getBytes());
         document = documentRepository.save(document);
@@ -124,24 +125,21 @@ public class ChatServiceImpl implements ChatService {
                 .map(ChunkSearchResult::getContent)
                 .collect(Collectors.joining("\n---\n"));
 
+        // 4. OpenAI Threads логика
         if (chat.getOpenAiThreadId() == null) {
-            String threadId = createThread();
-            chat.setOpenAiThreadId(threadId);
+            chat.setOpenAiThreadId(createThread());
             chatRepository.save(chat);
         }
 
-        String threadId = chat.getOpenAiThreadId();
+        String combinedMessage = "Context:\n" + contextText + "\n\nQuestion: " + content;
+        addMessageToThread(chat.getOpenAiThreadId(), combinedMessage);
 
-        String combinedMessage = "Context from PDF:\n" + contextText + "\n\nUser Question: " + content;
-        addMessageToThread(threadId, combinedMessage);
-
-        String runId = createRun(threadId);
-
-        waitForRunCompletion(threadId, runId);
-
-        String aiAnswer = getLastAssistantMessage(threadId);
+        String runId = createRun(chat.getOpenAiThreadId());
+        waitForRunCompletion(chat.getOpenAiThreadId(), runId);
+        String aiAnswer = getLastAssistantMessage(chat.getOpenAiThreadId());
 
         Message aiMessage = messageService.saveMessage(chat, aiAnswer, MessageRole.ASSISTANT);
+
         messageService.saveMessageSources(aiMessage, topResults);
 
         return new ChatResponseDto(aiAnswer, aiMessage.getId());
@@ -215,21 +213,41 @@ public class ChatServiceImpl implements ChatService {
         dto.setId(chat.getId());
         dto.setTitle(chat.getTitle());
         dto.setDocumentFilename(chat.getDocument().getFilename());
+        dto.setDocumentId(chat.getDocument().getId());
 
-        if (chat.getMessages() != null && !chat.getMessages().isEmpty()) {
-            LocalDateTime lastDate = chat.getMessages().stream()
-                    .map(Message::getCreatedAt)
-                    .max(LocalDateTime::compareTo)
-                    .orElse(null);
-            dto.setLastMessageAt(lastDate);
-        }
+        // 1. Проверка на етапа на обработка на документа
+        dto.setStage(chat.getDocument().getProcessingJob() != null ?
+                chat.getDocument().getProcessingJob().getStage() : ProcessingJobStage.UPLOADED);
 
+        // 2. Дълбоко мапване (Deep Mapping) на съобщенията и техните източници
         List<MessageResponseDto> messageDtos = chat.getMessages().stream()
-                .map(m -> new MessageResponseDto(m.getContent(), m.getRole().name(), m.getCreatedAt()))
+                .map(m -> {
+                    // По подразбиране източниците са празен списък (за потребителя)
+                    List<String> sourceTexts = Collections.emptyList();
+
+                    // За асистента извличаме текста: Message -> MessageContextSource -> DocumentChunk -> String (Content)
+                    if (m.getRole() == MessageRole.ASSISTANT && m.getContextSources() != null) {
+                        sourceTexts = m.getContextSources().stream()
+                                .map(source -> source.getChunk().getContent()) // Взимаме реалния текст от чанка
+                                .collect(Collectors.toList());
+                    }
+
+                    return new MessageResponseDto(
+                            m.getContent(),
+                            m.getRole().name(),
+                            m.getCreatedAt(),
+                            sourceTexts // Вече имаме реалните chunks за левия панел
+                    );
+                })
                 .sorted(Comparator.comparing(MessageResponseDto::getCreatedAt))
                 .collect(Collectors.toList());
 
         dto.setMessages(messageDtos);
+
+        // Актуализираме времето на последното съобщение за списъка в Dashboard-а
+        if (!messageDtos.isEmpty()) {
+            dto.setLastMessageAt(messageDtos.get(messageDtos.size() - 1).getCreatedAt());
+        }
 
         return dto;
     }
