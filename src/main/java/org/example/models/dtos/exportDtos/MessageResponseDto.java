@@ -10,7 +10,6 @@ public class MessageResponseDto {
     private LocalDateTime createdAt;
     private List<String> sources;
 
-    // Конструктор
     public MessageResponseDto(String content, String role, LocalDateTime createdAt, List<String> sources) {
         this.content = content;
         this.role = role;

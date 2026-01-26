@@ -8,12 +8,9 @@ public class MessageContextSource extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "message_id", nullable = false)
     private Message message;
-
     @ManyToOne
     @JoinColumn(name = "chunk_id", nullable = false)
     private DocumentChunk chunk;
-
-    // Резултатът от сравнението (напр. 0.85 = 85% съвпадение)
     @Column(name = "similarity_score", nullable = false)
     private Double score;
 

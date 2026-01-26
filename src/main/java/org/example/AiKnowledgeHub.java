@@ -10,7 +10,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 public class AiKnowledgeHub {
     public static void main(String[] args) {
-        // Превключваме на PyTorch
         System.setProperty("ai.djl.default_engine", "PyTorch");
 
         try {

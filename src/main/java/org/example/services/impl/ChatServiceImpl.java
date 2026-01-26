@@ -127,7 +127,6 @@ public class ChatServiceImpl implements ChatService {
                 .map(ChunkSearchResult::getContent)
                 .collect(Collectors.joining("\n---\n"));
 
-        // 4. OpenAI Threads логика
         if (chat.getOpenAiThreadId() == null) {
             chat.setOpenAiThreadId(createThread());
             chatRepository.save(chat);
