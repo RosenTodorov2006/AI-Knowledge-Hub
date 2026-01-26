@@ -57,8 +57,8 @@ public class DashboardRestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ChatViewDto> getChatDetails(@PathVariable Long id) {
-        ChatViewDto chatDetails = chatService.getChatDetails(id);
+    public ResponseEntity<ChatViewDto> getChatDetails(@PathVariable Long id, Principal principal) {
+        ChatViewDto chatDetails = chatService.getChatDetails(id, principal.getName());
         return ResponseEntity.ok(chatDetails);
     }
 }

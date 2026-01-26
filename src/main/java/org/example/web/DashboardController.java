@@ -37,8 +37,9 @@ public class DashboardController {
     }
 
     @GetMapping("/chats/{id}")
-    public String viewChat(@PathVariable Long id, Model model) {
-        ChatViewDto chat = chatService.getChatDetails(id);
+    public String viewChat(@PathVariable Long id, Model model, Principal principal) {
+        ChatViewDto chat = chatService.getChatDetails(id, principal.getName());
+
         model.addAttribute("chat", chat);
         return "chat";
     }

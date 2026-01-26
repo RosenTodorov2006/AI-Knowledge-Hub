@@ -18,11 +18,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -205,9 +207,9 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatViewDto getChatDetails(Long id) {
-        Chat chat = chatRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
+    public ChatViewDto getChatDetails(Long id, String gmail) {
+        Chat chat = chatRepository.findByIdAndUserEntityEmail(id, gmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this chat!"));
 
         ChatViewDto dto = new ChatViewDto();
         dto.setId(chat.getId());
@@ -215,20 +217,16 @@ public class ChatServiceImpl implements ChatService {
         dto.setDocumentFilename(chat.getDocument().getFilename());
         dto.setDocumentId(chat.getDocument().getId());
 
-        // 1. Проверка на етапа на обработка на документа
         dto.setStage(chat.getDocument().getProcessingJob() != null ?
                 chat.getDocument().getProcessingJob().getStage() : ProcessingJobStage.UPLOADED);
 
-        // 2. Дълбоко мапване (Deep Mapping) на съобщенията и техните източници
         List<MessageResponseDto> messageDtos = chat.getMessages().stream()
                 .map(m -> {
-                    // По подразбиране източниците са празен списък (за потребителя)
                     List<String> sourceTexts = Collections.emptyList();
 
-                    // За асистента извличаме текста: Message -> MessageContextSource -> DocumentChunk -> String (Content)
                     if (m.getRole() == MessageRole.ASSISTANT && m.getContextSources() != null) {
                         sourceTexts = m.getContextSources().stream()
-                                .map(source -> source.getChunk().getContent()) // Взимаме реалния текст от чанка
+                                .map(source -> source.getChunk().getContent())
                                 .collect(Collectors.toList());
                     }
 
@@ -236,19 +234,16 @@ public class ChatServiceImpl implements ChatService {
                             m.getContent(),
                             m.getRole().name(),
                             m.getCreatedAt(),
-                            sourceTexts // Вече имаме реалните chunks за левия панел
+                            sourceTexts
                     );
                 })
                 .sorted(Comparator.comparing(MessageResponseDto::getCreatedAt))
                 .collect(Collectors.toList());
 
         dto.setMessages(messageDtos);
-
-        // Актуализираме времето на последното съобщение за списъка в Dashboard-а
         if (!messageDtos.isEmpty()) {
             dto.setLastMessageAt(messageDtos.get(messageDtos.size() - 1).getCreatedAt());
         }
-
         return dto;
     }
 }

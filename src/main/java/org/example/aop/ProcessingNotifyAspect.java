@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class ProcessingNotifyAspect {
+    public static final String PROCESSING_TOPIC_PREFIX = "/topic/processing/";
+    public static final String STATUS_COMPLETED = "COMPLETED";
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -17,8 +19,6 @@ public class ProcessingNotifyAspect {
 
     @AfterReturning(pointcut = "@annotation(org.example.validation.annotation.TrackProcessing) && args(documentId)", argNames = "documentId")
     public void afterDocumentProcessed(Long documentId) {
-        System.out.println("AOP: Обработката приключи за ID: " + documentId + ". Изпращане на сигнал COMPLETED...");
-
-        messagingTemplate.convertAndSend("/topic/processing/" + documentId, "COMPLETED");
+        messagingTemplate.convertAndSend(PROCESSING_TOPIC_PREFIX + documentId, STATUS_COMPLETED);
     }
 }

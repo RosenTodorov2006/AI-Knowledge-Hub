@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Error | KnowledgeHub</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <style>
+        .error-wrapper {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+        }
+        .error-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .status-code {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #3b82f6;
+            margin: 0;
+        }
+        .error-type {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .error-desc {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="error-wrapper">
+    <div class="error-card">
+        <h1 class="status-code" th:text="${status}">500</h1>
+        <div class="error-type" th:text="${error}">Internal Server Error</div>
+
+        <p class="error-desc">
+            <span th:if="${status == 403}">Oops! It looks like you don't have permission to view this chat. KnowledgeHub security is our top priority! 🛡️</span>
+
+            <span th:if="${status == 404}">The page you are looking for has wandered off. Please double-check the URL.</span>
+
+            <span th:if="${status == 500}">Something went wrong on the server. AI must be overthinking everything! ⚡</span>
+            <br><br>
+            <small th:text="${message}"></small>
+        </p>
+
+        <a th:href="@{/dashboard}" class="btn-primary" style="text-decoration: none; padding: 12px 24px; display: inline-block;">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+</body>
+</html>
