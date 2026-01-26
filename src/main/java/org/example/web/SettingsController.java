@@ -48,6 +48,8 @@ public class SettingsController {
         if (!model.containsAttribute("invalidUserPasswordData")) {
             model.addAttribute("invalidUserPasswordData", false);
         }
+        UserViewDto currentUser = this.userService.getUserViewByEmail(principal.getName());
+        model.addAttribute("currentUser", currentUser);
         return "settings";
     }
     @PostMapping("/changeInfo")

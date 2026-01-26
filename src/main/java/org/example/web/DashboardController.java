@@ -2,8 +2,10 @@ package org.example.web;
 
 import org.example.models.dtos.exportDtos.ChatDto;
 import org.example.models.dtos.exportDtos.ChatViewDto;
+import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.services.ChatService;
 import org.example.services.DashboardService;
+import org.example.services.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +19,20 @@ import java.util.List;
 public class DashboardController {
     private final DashboardService dashboardService;
     private final ChatService chatService;
+    private final UserService userService;
 
-    public DashboardController(DashboardService dashboardService, ChatService chatService) {
+    public DashboardController(DashboardService dashboardService, ChatService chatService, UserService userService) {
         this.dashboardService = dashboardService;
         this.chatService = chatService;
+        this.userService = userService;
     }
 
     @GetMapping("/dashboard")
     public String dashboard(Model model, Principal principal){
         List<ChatDto> allChats = this.dashboardService.getAllChats(principal.getName());
         model.addAttribute("allChats", allChats);
+        UserViewDto currentUser = this.userService.getUserViewByEmail(principal.getName());
+        model.addAttribute("currentUser", currentUser);
         return "dashboard";
     }
 
