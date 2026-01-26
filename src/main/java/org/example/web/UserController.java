@@ -19,53 +19,73 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class UserController {
-    private final UserService  userService;
+    public static final String VIEW_REGISTER = "register";
+    public static final String VIEW_LOGIN = "login";
+    public static final String REDIRECT_REGISTER = "redirect:/register";
+    public static final String REDIRECT_LOGIN = "redirect:/login";
+    public static final String ATTR_REGISTER = "registerSeedDto";
+    public static final String ATTR_LOGIN = "loginSeedDto";
+    public static final String ATTR_INVALID_DATA = "invalidData";
+    public static final String ATTR_ERROR_MSG = "errorMessage";
+    public static final String BINDING_RESULT_PREFIX = "org.springframework.validation.BindingResult.";
+    public static final String SPRING_SECURITY_LAST_EXCEPTION = "SPRING_SECURITY_LAST_EXCEPTION";
+    public static final String MSG_INVALID_CREDENTIALS = "Invalid username or password.";
+    public static final String MSG_ACCOUNT_DISABLED = "Your account is deactivated. Please contact support.";
+
+    private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @GetMapping("/register")
-    public String register(Model model){
-        if(!model.containsAttribute("registerSeedDto")){
-            model.addAttribute("registerSeedDto",  new RegisterSeedDto());
+    public String register(Model model) {
+        if (!model.containsAttribute(ATTR_REGISTER)) {
+            model.addAttribute(ATTR_REGISTER, new RegisterSeedDto());
         }
-        return "register";
+        return VIEW_REGISTER;
     }
+
     @PostMapping("/register")
-    public String registerAndSaveInDataBase(@Valid RegisterSeedDto registerSeedDto, BindingResult bindingResult, RedirectAttributes redirectAttributes){
-        if(bindingResult.hasErrors()){
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.registerSeedDto", bindingResult);
-            redirectAttributes.addFlashAttribute("registerSeedDto", registerSeedDto);
-            return "redirect:/register";
+    public String registerAndSaveInDataBase(@Valid RegisterSeedDto registerSeedDto,
+                                            BindingResult bindingResult,
+                                            RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute(BINDING_RESULT_PREFIX + ATTR_REGISTER, bindingResult);
+            redirectAttributes.addFlashAttribute(ATTR_REGISTER, registerSeedDto);
+            return REDIRECT_REGISTER;
         }
+
         this.userService.register(registerSeedDto);
-        return "redirect:/login";
+        return REDIRECT_LOGIN;
     }
+
     @GetMapping("/login")
-    public String login(Model model){
-        if(!model.containsAttribute("loginSeedDto")){
-            model.addAttribute("loginSeedDto", new LoginSeedDto());
+    public String login(Model model) {
+        if (!model.containsAttribute(ATTR_LOGIN)) {
+            model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
         }
-        model.addAttribute("invalidData", false);
-        return "login";
+        model.addAttribute(ATTR_INVALID_DATA, false);
+        return VIEW_LOGIN;
     }
 
     @GetMapping("/login-error")
     public String loginError(Model model, HttpServletRequest request) {
+        model.addAttribute(ATTR_INVALID_DATA, true);
+        model.addAttribute(ATTR_ERROR_MSG, getErrorMessage(request));
+        model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
+
+        return VIEW_LOGIN;
+    }
+    private String getErrorMessage(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        String errorMessage = "Invalid username or password.";
 
         if (session != null) {
-            Exception ex = (Exception) session.getAttribute("SPRING_SECURITY_LAST_EXCEPTION");
-            if (ex instanceof DisabledException) {
-                errorMessage = "Your account is deactivated. Please contact support.";
+            Object exception = session.getAttribute(SPRING_SECURITY_LAST_EXCEPTION);
+            if (exception instanceof DisabledException) {
+                return MSG_ACCOUNT_DISABLED;
             }
         }
-
-        model.addAttribute("invalidData", true);
-        model.addAttribute("errorMessage", errorMessage);
-        model.addAttribute("loginSeedDto", new LoginSeedDto());
-        return "login";
+        return MSG_INVALID_CREDENTIALS;
     }
 }

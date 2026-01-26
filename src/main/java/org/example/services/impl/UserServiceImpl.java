@@ -10,19 +10,25 @@ import org.example.models.entities.enums.ApplicationRole;
 import org.example.repositories.UserRepository;
 import org.example.services.UserService;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
+    public static final String ERR_USER_NOT_FOUND = "User with provided email was not found!";
+
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository,
+                           ModelMapper modelMapper,
+                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
@@ -30,16 +36,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void register(RegisterSeedDto registerSeedDto) {
-        UserEntity currentUser = this.modelMapper.map(registerSeedDto, UserEntity.class);
-        currentUser.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
-        if (this.userRepository.count() == 0) {
-            currentUser.setRole(ApplicationRole.ADMIN);
-        } else {
-            currentUser.setRole(ApplicationRole.USER);
-        }
-        currentUser.setActive(true);
-        currentUser.setCreatedAt(LocalDateTime.now());
-        this.userRepository.save(currentUser);
+        UserEntity user = this.modelMapper.map(registerSeedDto, UserEntity.class);
+
+        user.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
+
+        user.setRole(this.userRepository.count() == 0 ? ApplicationRole.ADMIN : ApplicationRole.USER);
+
+        user.setActive(true);
+        user.setCreatedAt(LocalDateTime.now());
+
+        this.userRepository.save(user);
     }
 
     @Override
@@ -55,7 +61,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
-        UserEntity userEntity = this.userRepository.findByEmail(email).orElseThrow(() -> new NullPointerException("USER NOT FOUND!"));
+        UserEntity userEntity = findByEmailOrThrow(email);
         userEntity.setEmail(changeProfileDto.getEmail());
         userEntity.setFullName(changeProfileDto.getFullName());
     }
@@ -63,27 +69,26 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
-        UserEntity userEntity = this.userRepository.findByEmail(email).orElseThrow(() -> new NullPointerException("USER NOT FOUND!"));
+        UserEntity userEntity = findByEmailOrThrow(email);
         userEntity.setPassword(passwordEncoder.encode(changeUserPasswordDto.getPassword()));
     }
 
     @Override
     @Transactional
     public void deleteUser(String email) {
-        UserEntity userEntity = this.userRepository.findByEmail(email)
-                .orElseThrow(() -> new NullPointerException("USER DOES NOT EXIST!"));
+        UserEntity userEntity = findByEmailOrThrow(email);
         userEntity.setActive(false);
     }
 
     @Override
     public UserViewDto getUserViewByEmail(String email) {
         return this.userRepository.findByEmail(email)
-                .map(user -> {
-                    UserViewDto dto = new UserViewDto();
-                    dto.setEmail(user.getEmail());
-                    dto.setFullName(user.getFullName());
-                    return dto;
-                })
-                .orElseThrow(() -> new NullPointerException("USER NOT FOUND!"));
+                .map(user -> this.modelMapper.map(user, UserViewDto.class))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERR_USER_NOT_FOUND));
+    }
+
+    private UserEntity findByEmailOrThrow(String email) {
+        return this.userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERR_USER_NOT_FOUND));
     }
 }
