@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,13 +25,14 @@
                 </svg>
                 <span>Dashboard</span>
             </a>
-            <a href="/templates/admin-monitor.html" class="nav-item">
+            <a th:href="@{/admin/monitor}" class="nav-item" sec:authorize="hasRole('ADMIN')">
                 <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 2L3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20H15C15.5304 20 16.0391 19.7893 16.4142 19.4142C16.7893 19.0391 17 18.5304 17 18V6L11 2M9 2H11M9 2V8H11V2M5 20V9H15V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 2L3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20H15C15.5304 20 16.0391 19.7893 16.4142 19.4142C16.7893 19.0391 17 18.5304 17 18V6L11 2M9 2H11M9 2V8H11V2M5 20V9H15V20"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span>Admin Monitor</span>
             </a>
-            <a href="/resources/templates/settings.html" class="nav-item">
+            <a href="/settings" class="nav-item">
                 <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 12C11.1046 12 12 11.1046 12 10C12 8.89543 11.1046 8 10 8C8.89543 8 8 8.89543 8 10C8 11.1046 8.89543 12 10 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M16.658 13.6906C16.5408 13.9158 16.4914 14.1716 16.5158 14.4245C16.5402 14.6774 16.6373 14.9158 16.7947 15.1097C16.9521 15.3036 17.1622 15.4445 17.3976 15.5144C17.633 15.5842 17.8833 15.5798 18.1159 15.5019L18.7416 15.2922C18.9742 15.2142 19.1787 15.0661 19.3292 14.8659C19.4796 14.6657 19.5693 14.4223 19.5865 14.1676C19.6037 13.9129 19.5476 13.6581 19.4249 13.4369L18.6866 12.2387C18.5639 12.0175 18.3814 11.8396 18.1622 11.7263C17.943 11.613 17.6966 11.5691 17.453 11.6004C17.2095 11.6317 16.9796 11.7368 16.7947 11.9022C16.6098 12.0677 16.4783 12.2862 16.4171 12.5287L16.2249 13.2906C16.1881 13.4214 16.1694 13.5569 16.1694 13.6931C16.1694 13.8293 16.1881 13.9648 16.2249 14.0956L16.658 13.6906Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

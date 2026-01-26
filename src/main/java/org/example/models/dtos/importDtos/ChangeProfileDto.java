@@ -9,10 +9,10 @@ import org.hibernate.validator.constraints.Length;
 public class ChangeProfileDto {
     @Email(message = "Invalid email.")
     @NotBlank(message = "Invalid email.")
-    @UniqueEmail
+    @UniqueEmail(message = "Gmail already use.")
     private String email;
     @Length(min = 3, max = 20, message = "Full name length must be between 3 and 20 characters.")
-    @NotNull
+    @NotNull(message = "Full name length must be between 3 and 20 characters.")
     private String fullName;
 
     public String getEmail() {

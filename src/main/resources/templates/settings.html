@@ -7,8 +7,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/resources/static/css/dashboard.css">
-    <link rel="stylesheet" href="/resources/static/css/settings.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/settings.css">
+    <style>
+        /* Дефинираме стила за твоя малък блок за грешки */
+        .error-block {
+            color: #ef4444; /* Ярко червено (Tailwind style) */
+            display: block;  /* За да отиде на нов ред под инпута */
+            margin-top: 5px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Опционално: червена рамка за самия инпут при грешка */
+        .input-error {
+            border-color: #ef4444 !important;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-wrapper">
@@ -22,19 +37,19 @@
 
             <!-- Navigation -->
             <nav class="sidebar-nav">
-                <a href="/resources/templates/dashboard.html" class="nav-item">
+                <a href="/dashboard" class="nav-item">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M3 10L10 3L17 10M7 18V12H13V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span>Dashboard</span>
                 </a>
-                <a href="/resources/templates/admin-monitor.html" class="nav-item">
+                <a href="/admin/monitor" class="nav-item">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M9 2L3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20H15C15.5304 20 16.0391 19.7893 16.4142 19.4142C16.7893 19.0391 17 18.5304 17 18V6L11 2M9 2H11M9 2V8H11V2M5 20V9H15V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span>Admin Monitor</span>
                 </a>
-                <a href="/resources/templates/settings.html" class="nav-item active">
+                <a href="/settings" class="nav-item active">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M10 12C11.1046 12 12 11.1046 12 10C12 8.89543 11.1046 8 10 8C8.89543 8 8 8.89543 8 10C8 11.1046 8.89543 12 10 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M16.658 13.6906C16.5408 13.9158 16.4914 14.1716 16.5158 14.4245C16.5402 14.6774 16.6373 14.9158 16.7947 15.1097C16.9521 15.3036 17.1622 15.4445 17.3976 15.5144C17.633 15.5842 17.8833 15.5798 18.1159 15.5019L18.7416 15.2922C18.9742 15.2142 19.1787 15.0661 19.3292 14.8659C19.4796 14.6657 19.5693 14.4223 19.5865 14.1676C19.6037 13.9129 19.5476 13.6581 19.4249 13.4369L18.6866 12.2387C18.5639 12.0175 18.3814 11.8396 18.1622 11.7263C17.943 11.613 17.6966 11.5691 17.453 11.6004C17.2095 11.6317 16.9796 11.7368 16.7947 11.9022C16.6098 12.0677 16.4783 12.2862 16.4171 12.5287L16.2249 13.2906C16.1881 13.4214 16.1694 13.5569 16.1694 13.6931C16.1694 13.8293 16.1881 13.9648 16.2249 14.0956L16.658 13.6906Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -55,7 +70,7 @@
                         <div class="user-plan">Free Plan</div>
                     </div>
                 </div>
-                <a href="/resources/templates/index.html" class="logout-btn">
+                <a href="/index" class="logout-btn">
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7 2H4C3.46957 2 2.96086 2.21071 2.58579 2.58579C2.21071 2.96086 2 3.46957 2 4V14C2 14.5304 2.21071 15.0391 2.58579 15.4142C2.96086 15.7893 3.46957 16 4 16H7M12 13L16 9M16 9L12 5M16 9H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -87,15 +102,31 @@
                         <h2 class="card-title">Profile</h2>
                     </div>
                     <div class="card-body">
-                        <form class="settings-form">
+                        <form class="settings-form" th:action="@{/settings/changeInfo}" th:method="post" th:object="${changeProfileDto}">
                             <div class="form-group">
                                 <label for="fullName" class="form-label">Full Name</label>
-                                <input type="text" id="fullName" name="fullName" class="form-input" placeholder="John Doe">
+                                <input type="text"
+                                       id="fullName"
+                                       th:field="*{fullName}"
+                                       class="form-input"
+                                       required
+                                       minlength="3"
+                                       maxlength="20"
+                                       th:classappend="${#fields.hasErrors('fullName')} ? 'input-error'">
+                                <small th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="error-block"></small>
                             </div>
+
                             <div class="form-group">
                                 <label for="email" class="form-label">Email Address</label>
-                                <input type="email" id="email" name="email" class="form-input" placeholder="john@example.com">
+                                <input type="email"
+                                       id="email"
+                                       th:field="*{email}"
+                                       class="form-input"
+                                       required
+                                       th:classappend="${#fields.hasErrors('email')} ? 'input-error'">
+                                <small th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-block"></small>
                             </div>
+
                             <div class="form-actions">
                                 <button type="submit" class="btn-primary">Save Changes</button>
                             </div>
@@ -103,31 +134,31 @@
                     </div>
                 </div>
 
-                <!-- Notifications Section -->
-                <div class="settings-card">
-                    <div class="card-header">
-                        <div class="header-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 8A6 6 0 0 0 6 8C6 5.38757 7.1371 3.16509 9 1.92188M18 8C18 9.65685 18.6716 11.1569 19.7365 12.2198M18 8V11.625M6 8C6 8.72857 6.19506 9.41165 6.5349 10M18 11.625V16C18 17.6569 16.6569 19 15 19H9C7.34315 19 6 17.6569 6 16V11.625L6.5349 10M18 11.625L19.7365 12.2198M6.5349 10L4.26352 11.2198M19.7365 12.2198L21.4731 11.625M4.26352 11.2198C4.08433 11.3115 3.87771 11.3635 3.65685 11.3635C2.74162 11.3635 2 10.6219 2 9.70664C2 9.19762 2.19506 8.73457 2.50707 8.38757L4.26352 11.2198Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h2 class="card-title">Notifications</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="checkbox-group">
-                            <label class="checkbox-label">
-                                <span class="checkbox-text">Email Notifications: Receive updates about your chats</span>
-                                <input type="checkbox" name="emailNotifications" class="checkbox-input" checked>
-                                <span class="checkbox-custom"></span>
-                            </label>
-                            <label class="checkbox-label">
-                                <span class="checkbox-text">Processing Complete: Notify when document processing is done</span>
-                                <input type="checkbox" name="processingComplete" class="checkbox-input" checked>
-                                <span class="checkbox-custom"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
+<!--                &lt;!&ndash; Notifications Section &ndash;&gt;-->
+<!--                <div class="settings-card">-->
+<!--                    <div class="card-header">-->
+<!--                        <div class="header-icon">-->
+<!--                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                                <path d="M18 8A6 6 0 0 0 6 8C6 5.38757 7.1371 3.16509 9 1.92188M18 8C18 9.65685 18.6716 11.1569 19.7365 12.2198M18 8V11.625M6 8C6 8.72857 6.19506 9.41165 6.5349 10M18 11.625V16C18 17.6569 16.6569 19 15 19H9C7.34315 19 6 17.6569 6 16V11.625L6.5349 10M18 11.625L19.7365 12.2198M6.5349 10L4.26352 11.2198M19.7365 12.2198L21.4731 11.625M4.26352 11.2198C4.08433 11.3115 3.87771 11.3635 3.65685 11.3635C2.74162 11.3635 2 10.6219 2 9.70664C2 9.19762 2.19506 8.73457 2.50707 8.38757L4.26352 11.2198Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
+<!--                            </svg>-->
+<!--                        </div>-->
+<!--                        <h2 class="card-title">Notifications</h2>-->
+<!--                    </div>-->
+<!--                    <div class="card-body">-->
+<!--                        <div class="checkbox-group">-->
+<!--                            <label class="checkbox-label">-->
+<!--                                <span class="checkbox-text">Email Notifications: Receive updates about your chats</span>-->
+<!--                                <input type="checkbox" name="emailNotifications" class="checkbox-input" checked>-->
+<!--                                <span class="checkbox-custom"></span>-->
+<!--                            </label>-->
+<!--                            <label class="checkbox-label">-->
+<!--                                <span class="checkbox-text">Processing Complete: Notify when document processing is done</span>-->
+<!--                                <input type="checkbox" name="processingComplete" class="checkbox-input" checked>-->
+<!--                                <span class="checkbox-custom"></span>-->
+<!--                            </label>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
 
                 <!-- Security Section -->
                 <div class="settings-card">
@@ -141,15 +172,38 @@
                         <h2 class="card-title">Security</h2>
                     </div>
                     <div class="card-body">
-                        <form class="settings-form">
-                            <div class="form-group">
-                                <label for="currentPassword" class="form-label">Current Password</label>
-                                <input type="password" id="currentPassword" name="currentPassword" class="form-input" placeholder="••••••••">
-                            </div>
+                        <form class="settings-form" th:action="@{/settings/changeUserPassword}" th:method="post" th:object="${changeUserPasswordDto}">
+
                             <div class="form-group">
                                 <label for="newPassword" class="form-label">New Password</label>
-                                <input type="password" id="newPassword" name="newPassword" class="form-input" placeholder="••••••••">
+                                <input type="password"
+                                       id="newPassword"
+                                       th:field="*{password}"
+                                       class="form-input"
+                                       required
+                                       minlength="3"
+                                       maxlength="20"
+                                       th:classappend="${#fields.hasErrors('password')} ? 'input-error'">
+                                <small class="error-block" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></small>
                             </div>
+
+                            <div class="form-group">
+                                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                <input type="password"
+                                       id="confirmPassword"
+                                       th:field="*{confirmPassword}"
+                                       class="form-input"
+                                       required
+                                       minlength="3"
+                                       maxlength="20"
+                                       th:classappend="${#fields.hasErrors('confirmPassword') || #fields.hasGlobalErrors()} ? 'input-error'">
+                                <small class="error-block" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></small>
+                            </div>
+
+                            <div th:if="${#fields.hasGlobalErrors()}">
+                                <small class="error-block" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></small>
+                            </div>
+
                             <div class="form-actions">
                                 <button type="submit" class="btn-primary">Update Password</button>
                             </div>
@@ -157,43 +211,49 @@
                     </div>
                 </div>
 
-                <!-- Subscription Section -->
-                <div class="settings-card">
-                    <div class="card-header">
-                        <div class="header-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 10H21M7 15H17M5 20H19C20.1046 20 21 19.1046 21 18V6C21 4.89543 20.1046 4 19 4H5C3.89543 4 3 4.89543 3 6V18C3 19.1046 3.89543 20 5 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h2 class="card-title">Subscription</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="subscription-info">
-                            <div class="plan-badge">
-                                <span class="plan-label">Current Plan</span>
-                                <span class="plan-tag">Free</span>
-                            </div>
-                            <p class="plan-description">Free - 5 documents per month</p>
-                            <button type="button" class="btn-upgrade">Upgrade to Pro</button>
-                        </div>
-                    </div>
-                </div>
+<!--                &lt;!&ndash; Subscription Section &ndash;&gt;-->
+<!--                <div class="settings-card">-->
+<!--                    <div class="card-header">-->
+<!--                        <div class="header-icon">-->
+<!--                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                                <path d="M3 10H21M7 15H17M5 20H19C20.1046 20 21 19.1046 21 18V6C21 4.89543 20.1046 4 19 4H5C3.89543 4 3 4.89543 3 6V18C3 19.1046 3.89543 20 5 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
+<!--                            </svg>-->
+<!--                        </div>-->
+<!--                        <h2 class="card-title">Subscription</h2>-->
+<!--                    </div>-->
+<!--                    <div class="card-body">-->
+<!--                        <div class="subscription-info">-->
+<!--                            <div class="plan-badge">-->
+<!--                                <span class="plan-label">Current Plan</span>-->
+<!--                                <span class="plan-tag">Free</span>-->
+<!--                            </div>-->
+<!--                            <p class="plan-description">Free - 5 documents per month</p>-->
+<!--                            <button type="button" class="btn-upgrade">Upgrade to Pro</button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
 
-                <!-- Danger Zone Section -->
                 <div class="settings-card danger-zone">
                     <div class="card-header danger-header">
                         <div class="header-icon danger-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M10 11V17M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6H5H21M8 6V4C8 3.46957 10 2 10 2H14C14.5304 2 16 3.46957 16 4V6M19 6V20C19 22 17 22 17 22H7C5 22 5 20.5304 5 20V6H19Z"/>
                             </svg>
                         </div>
                         <h2 class="card-title danger-title">Danger Zone</h2>
                     </div>
                     <div class="card-body">
                         <div class="danger-content">
-                            <p class="danger-text">Delete Account: Permanently delete your account and all associated data.</p>
-                            <button type="button" class="btn-danger">Delete Account</button>
+                            <p class="danger-text">
+                                <strong>Deactivate Account:</strong> This will disable your access to KnowledgeHub.
+                                Your data will be preserved but you will be logged out immediately.
+                            </p>
+                            <form th:action="@{/settings}" th:method="delete">
+                                <button type="submit" class="btn-danger"
+                                        onclick="return confirm('Are you sure you want to deactivate your account?')">
+                                    Deactivate My Account
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -208,7 +268,7 @@
         </svg>
     </button>
 
-    <script src="/resources/static/js/dashboard.js"></script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>
 

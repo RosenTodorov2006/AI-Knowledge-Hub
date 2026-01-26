@@ -5,7 +5,7 @@ public class ProcessingJobDto {
     private String fileName;
     private String userEmail;
     private String error;
-    private String timeAgo; // Тук ще стои форматираният низ (напр. "2m ago")
+    private String timeAgo;
 
     private boolean extractPassed;
     private boolean chunkPassed;
