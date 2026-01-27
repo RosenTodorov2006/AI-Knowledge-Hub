@@ -18,6 +18,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chats")
 public class DashboardRestController {
+    public static final String JSON_KEY_ERROR = "error";
+    public static final String ERR_MSG_EMPTY_FILE = "Please select a file.";
+    public static final String ERR_MSG_PROCESS_PREFIX = "Processing error: ";
+
     private final DashboardService dashboardService;
     private final ChatService chatService;
 
@@ -30,12 +34,13 @@ public class DashboardRestController {
     public List<ChatDto> getDashboardData(Principal principal) {
         return this.dashboardService.getAllChats(principal.getName());
     }
+
     @PostMapping("/create")
-    public ResponseEntity<?> createChat(@RequestParam("file") MultipartFile file,
-                                        Principal principal) {
+    public ResponseEntity<Object> createChat(@RequestParam("file") MultipartFile file,
+                                             Principal principal) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Please select a file."));
+                    .body(Map.of(JSON_KEY_ERROR, ERR_MSG_EMPTY_FILE));
         }
 
         try {
@@ -43,7 +48,7 @@ public class DashboardRestController {
             return ResponseEntity.status(HttpStatus.CREATED).body(newChatDto);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Processing error: " + e.getMessage()));
+                    .body(Map.of(JSON_KEY_ERROR, ERR_MSG_PROCESS_PREFIX + e.getMessage()));
         }
     }
 
@@ -51,8 +56,8 @@ public class DashboardRestController {
     public ResponseEntity<ChatResponseDto> sendMessage(
             @PathVariable Long id,
             @RequestBody ChatRequestDto requestDto) {
-        ChatResponseDto response = chatService.generateResponse(id, requestDto.getMessage());
 
+        ChatResponseDto response = chatService.generateResponse(id, requestDto.getMessage());
         return ResponseEntity.ok(response);
     }
 

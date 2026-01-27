@@ -18,45 +18,65 @@ import org.springframework.validation.FieldError;
 @RestController
 @RequestMapping("/api/settings")
 public class SettingsRestController {
+    public static final String JSON_KEY_MESSAGE = "message";
+    public static final String JSON_KEY_ERROR = "error";
+    public static final String JSON_KEY_ERRORS = "errors";
+
+    public static final String MSG_PASSWORD_UPDATED = "Password updated successfully! Please use your new password for the next login.";
+    public static final String MSG_ACCOUNT_DELETED = "Account deleted successfully!";
+
     private final UserService userService;
+
     public SettingsRestController(UserService userService) {
         this.userService = userService;
     }
+
     @PostMapping("/changeInfo")
-    public ResponseEntity<?> changeInfo(@RequestBody @Valid ChangeProfileDto changeProfileDto, BindingResult bindingResult, Principal principal){
-        if(bindingResult.hasErrors()){
-            return ResponseEntity.badRequest().body(getErrors(bindingResult));
+    public ResponseEntity<Object> changeInfo(@RequestBody @Valid ChangeProfileDto changeProfileDto,
+                                             BindingResult bindingResult,
+                                             Principal principal) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(extractErrors(bindingResult));
         }
-        this.userService.changeProfileInfo(changeProfileDto, principal.getName());
-        UserViewDto updatedData = this.userService.getUserViewByEmail(changeProfileDto.getEmail());
+
+        userService.changeProfileInfo(changeProfileDto, principal.getName());
+        UserViewDto updatedData = userService.getUserViewByEmail(changeProfileDto.getEmail());
+
         return ResponseEntity.ok(updatedData);
     }
+
     @PostMapping("/changeUserPassword")
-    public ResponseEntity<?> changeUserPassword(@RequestBody @Valid ChangeUserPasswordDto changeUserPasswordDto, BindingResult bindingResult, Principal principal){
+    public ResponseEntity<Object> changeUserPassword(@RequestBody @Valid ChangeUserPasswordDto changeUserPasswordDto,
+                                                     BindingResult bindingResult,
+                                                     Principal principal) {
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(getErrors(bindingResult));
+            return ResponseEntity.badRequest().body(extractErrors(bindingResult));
         }
+
         try {
             userService.changeUserPassword(changeUserPasswordDto, principal.getName());
-            return ResponseEntity.ok(Map.of("message", "Password updated successfully! Please use your new password for the next login."));
+            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, MSG_PASSWORD_UPDATED));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
         }
     }
-    @DeleteMapping()
-    public ResponseEntity<?> delete(Principal principal){
-        try{
+
+    @DeleteMapping
+    public ResponseEntity<Object> delete(Principal principal) {
+        try {
             userService.deleteUser(principal.getName());
-            return ResponseEntity.ok(Map.of("message", "Account deleted successfully!"));
-        }catch (Exception e){
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, MSG_ACCOUNT_DELETED));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
         }
     }
-    private Map<String, List<String>> getErrors(BindingResult bindingResult) {
+
+    private Map<String, List<String>> extractErrors(BindingResult bindingResult) {
         List<String> errors = bindingResult.getFieldErrors()
                 .stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
-        return Map.of("errors", errors);
+
+        return Map.of(JSON_KEY_ERRORS, errors);
     }
 }
