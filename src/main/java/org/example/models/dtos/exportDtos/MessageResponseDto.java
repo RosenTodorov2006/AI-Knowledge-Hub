@@ -17,6 +17,9 @@ public class MessageResponseDto {
         this.sources = sources != null ? sources : new ArrayList<>();
     }
 
+    public MessageResponseDto() {
+    }
+
     public String getContent() {
         return content;
     }

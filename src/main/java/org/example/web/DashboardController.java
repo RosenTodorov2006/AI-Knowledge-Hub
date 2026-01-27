@@ -17,6 +17,20 @@ import java.util.List;
 
 @Controller
 public class DashboardController {
+
+    public static final String VIEW_DASHBOARD = "dashboard";
+    public static final String VIEW_CHAT = "chat";
+    public static final String REDIRECT_DASHBOARD = "redirect:/dashboard";
+    public static final String REDIRECT_CHAT_PREFIX = "redirect:/chats/";
+    public static final String ATTR_ALL_CHATS = "allChats";
+    public static final String ATTR_CURRENT_USER = "currentUser";
+    public static final String ATTR_CHAT = "chat";
+    public static final String ATTR_ERROR = "error";
+    public static final String PARAM_ERROR_TRUE = "error=true";
+    public static final String ANCHOR_BOTTOM = "#bottom-anchor";
+    public static final String ERR_MSG_EMPTY_FILE = "Please select a file.";
+    public static final String ERR_MSG_PROCESS_PREFIX = "Processing error: ";
+
     private final DashboardService dashboardService;
     private final ChatService chatService;
     private final UserService userService;
@@ -28,20 +42,19 @@ public class DashboardController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model, Principal principal){
-        List<ChatDto> allChats = this.dashboardService.getAllChats(principal.getName());
-        model.addAttribute("allChats", allChats);
-        UserViewDto currentUser = this.userService.getUserViewByEmail(principal.getName());
-        model.addAttribute("currentUser", currentUser);
-        return "dashboard";
+    public String dashboard(Model model, Principal principal) {
+        String email = principal.getName();
+
+        model.addAttribute(ATTR_ALL_CHATS, dashboardService.getAllChats(email));
+        model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
+
+        return VIEW_DASHBOARD;
     }
 
     @GetMapping("/chats/{id}")
     public String viewChat(@PathVariable Long id, Model model, Principal principal) {
-        ChatViewDto chat = chatService.getChatDetails(id, principal.getName());
-
-        model.addAttribute("chat", chat);
-        return "chat";
+        model.addAttribute(ATTR_CHAT, chatService.getChatDetails(id, principal.getName()));
+        return VIEW_CHAT;
     }
 
     @PostMapping("/chats/create")
@@ -49,36 +62,31 @@ public class DashboardController {
                                     Principal principal,
                                     RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Please select a file.");
-            return "redirect:/dashboard";
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_EMPTY_FILE);
+            return REDIRECT_DASHBOARD;
         }
 
         try {
             ChatViewDto newChatDto = chatService.startNewChat(file, principal.getName());
-
-            return "redirect:/chats/" + newChatDto.getId();
-
+            return REDIRECT_CHAT_PREFIX + newChatDto.getId();
         } catch (Exception e) {
-            System.err.println("Error creating chat: " + e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Processing error: " + e.getMessage());
-            return "redirect:/dashboard";
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_PROCESS_PREFIX + e.getMessage());
+            return REDIRECT_DASHBOARD;
         }
     }
+
     @PostMapping("/chats/{id}/send")
     public String sendMessage(@PathVariable Long id,
                               @RequestParam("message") String content) {
         if (content == null || content.trim().isEmpty()) {
-            return "redirect:/chats/" + id;
+            return REDIRECT_CHAT_PREFIX + id;
         }
 
         try {
             chatService.generateResponse(id, content);
-
+            return REDIRECT_CHAT_PREFIX + id + ANCHOR_BOTTOM;
         } catch (Exception e) {
-            System.err.println("Error generating AI response: " + e.getMessage());
-            return "redirect:/chats/" + id + "?error=true";
+            return REDIRECT_CHAT_PREFIX + id + "?" + PARAM_ERROR_TRUE;
         }
-
-        return "redirect:/chats/" + id + "#bottom-anchor";
     }
 }
