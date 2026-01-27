@@ -12,6 +12,11 @@ import java.security.Principal;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
+    public static final String VIEW_ADMIN_MONITOR = "admin-monitor";
+    public static final String ATTR_JOBS = "jobs";
+    public static final String ATTR_STATS = "stats";
+    public static final String ATTR_CURRENT_USER = "currentUser";
+
     private final AdminService adminService;
     private final UserService userService;
 
@@ -22,12 +27,14 @@ public class AdminController {
 
     @GetMapping("/monitor")
     public String adminMonitor(Model model, Principal principal) {
-        model.addAttribute("jobs", adminService.getFailedJobs());
-        model.addAttribute("stats", adminService.getSystemStats());
-        UserViewDto currentUser = this.userService.getUserViewByEmail(principal.getName());
-        model.addAttribute("currentUser", currentUser);
-        return "admin-monitor";
+        populateMonitorModel(model, principal.getName());
+
+        return VIEW_ADMIN_MONITOR;
     }
 
-
+    private void populateMonitorModel(Model model, String email) {
+        model.addAttribute(ATTR_JOBS, adminService.getFailedJobs());
+        model.addAttribute(ATTR_STATS, adminService.getSystemStats());
+        model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
+    }
 }
