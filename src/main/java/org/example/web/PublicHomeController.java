@@ -10,14 +10,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Controller
 public class PublicHomeController {
+    public static final String VIEW_INDEX = "index";
+    public static final String REDIRECT_DASHBOARD = "redirect:/dashboard";
+
     @GetMapping("/")
     public String index(Authentication authentication) {
-        if (authentication != null &&
-                authentication.isAuthenticated() &&
-                !(authentication instanceof AnonymousAuthenticationToken)) {
-
-            return "redirect:/dashboard";
+        if (isFullyAuthenticated(authentication)) {
+            return REDIRECT_DASHBOARD;
         }
-        return "index";
+
+        return VIEW_INDEX;
+    }
+    private boolean isFullyAuthenticated(Authentication authentication) {
+        return authentication != null &&
+                authentication.isAuthenticated() &&
+                !(authentication instanceof AnonymousAuthenticationToken);
     }
 }

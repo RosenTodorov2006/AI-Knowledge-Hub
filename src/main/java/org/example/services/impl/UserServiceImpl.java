@@ -91,4 +91,15 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERR_USER_NOT_FOUND));
     }
+
+    @Override
+    public ChangeProfileDto getChangeProfileDto(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERR_USER_NOT_FOUND));
+
+        ChangeProfileDto dto = new ChangeProfileDto();
+        dto.setEmail(user.getEmail());
+        dto.setFullName(user.getFullName());
+        return dto;
+    }
 }
