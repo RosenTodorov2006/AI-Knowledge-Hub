@@ -128,7 +128,7 @@
             <div id="bottom-anchor" style="height: 1px;"></div>
         </div>
         <div class="chat-footer">
-            <form th:action="@{/chats/{id}/send(id=${chat.id})}" method="post" id="messageForm">
+            <form th:action="@{/chat/send}" method="post" id="messageForm">
                 <div class="input-wrapper">
                     <textarea name="message" class="chat-input" id="userInput" placeholder="Ask a question..." required></textarea>
                     <button type="submit" class="send-btn">

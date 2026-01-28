@@ -1,8 +1,7 @@
 package org.example.web;
 
-import org.example.models.dtos.exportDtos.ChatDto;
+import jakarta.servlet.http.HttpSession;
 import org.example.models.dtos.exportDtos.ChatViewDto;
-import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.services.ChatService;
 import org.example.services.DashboardService;
 import org.example.services.UserService;
@@ -13,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
-import java.util.List;
 
 @Controller
 public class DashboardController {
@@ -21,7 +19,8 @@ public class DashboardController {
     public static final String VIEW_DASHBOARD = "dashboard";
     public static final String VIEW_CHAT = "chat";
     public static final String REDIRECT_DASHBOARD = "redirect:/dashboard";
-    public static final String REDIRECT_CHAT_PREFIX = "redirect:/chats/";
+    public static final String REDIRECT_CHAT = "redirect:/chat";
+    public static final String SESSION_CHAT_ID = "currentChatId";
     public static final String ATTR_ALL_CHATS = "allChats";
     public static final String ATTR_CURRENT_USER = "currentUser";
     public static final String ATTR_CHAT = "chat";
@@ -44,15 +43,24 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(Model model, Principal principal) {
         String email = principal.getName();
-
         model.addAttribute(ATTR_ALL_CHATS, dashboardService.getAllChats(email));
         model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
-
         return VIEW_DASHBOARD;
     }
+    @GetMapping("/chats/select/{id}")
+    public String selectChat(@PathVariable Long id, HttpSession session) {
+        session.setAttribute(SESSION_CHAT_ID, id);
+        return REDIRECT_CHAT;
+    }
 
-    @GetMapping("/chats/{id}")
-    public String viewChat(@PathVariable Long id, Model model, Principal principal) {
+    @GetMapping("/chat")
+    public String viewChat(HttpSession session, Model model, Principal principal) {
+        Long id = (Long) session.getAttribute(SESSION_CHAT_ID);
+
+        if (id == null) {
+            return REDIRECT_DASHBOARD;
+        }
+
         model.addAttribute(ATTR_CHAT, chatService.getChatDetails(id, principal.getName()));
         return VIEW_CHAT;
     }
@@ -60,6 +68,7 @@ public class DashboardController {
     @PostMapping("/chats/create")
     public String processCreateChat(@RequestParam("file") MultipartFile file,
                                     Principal principal,
+                                    HttpSession session,
                                     RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_EMPTY_FILE);
@@ -68,25 +77,28 @@ public class DashboardController {
 
         try {
             ChatViewDto newChatDto = chatService.startNewChat(file, principal.getName());
-            return REDIRECT_CHAT_PREFIX + newChatDto.getId();
+            session.setAttribute(SESSION_CHAT_ID, newChatDto.getId());
+            return REDIRECT_CHAT;
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_PROCESS_PREFIX + e.getMessage());
             return REDIRECT_DASHBOARD;
         }
     }
 
-    @PostMapping("/chats/{id}/send")
-    public String sendMessage(@PathVariable Long id,
+    @PostMapping("/chat/send")
+    public String sendMessage(HttpSession session,
                               @RequestParam("message") String content) {
-        if (content == null || content.trim().isEmpty()) {
-            return REDIRECT_CHAT_PREFIX + id;
+        Long id = (Long) session.getAttribute(SESSION_CHAT_ID);
+
+        if (id == null || content == null || content.trim().isEmpty()) {
+            return REDIRECT_CHAT;
         }
 
         try {
             chatService.generateResponse(id, content);
-            return REDIRECT_CHAT_PREFIX + id + ANCHOR_BOTTOM;
+            return REDIRECT_CHAT + ANCHOR_BOTTOM;
         } catch (Exception e) {
-            return REDIRECT_CHAT_PREFIX + id + "?" + PARAM_ERROR_TRUE;
+            return REDIRECT_CHAT + "?" + PARAM_ERROR_TRUE;
         }
     }
 }
