@@ -1,226 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KnowledgeHub - Your AI-Powered Knowledge Base</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Home', ~{::link})}">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
+
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <!-- Logo -->
-            <div class="nav-logo">
-                <span class="logo-icon">K</span>
-                <span class="logo-text">KnowledgeHub</span>
-            </div>
+<nav th:replace="~{fragments/common :: public-nav}"></nav>
 
-            <!-- Navigation Links -->
-            <ul class="nav-links" id="navLinks">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">How it Works</a></li>
-<!--                <li><a href="#pricing">Pricing</a></li>-->
-            </ul>
-
-            <!-- Auth Buttons -->
-            <div class="nav-auth">
-                <a href="/login" class="auth-login">Login</a>
-                <a href="/register" class="auth-btn">Get Started</a>
-            </div>
-
-            <!-- Hamburger Menu (Mobile) -->
-            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+<section id="home" class="hero">
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1 class="hero-title">Transform Your Documents Into Intelligent Conversations</h1>
+            <p class="hero-subtitle">Upload your documents and chat with them instantly. KnowledgeHub makes your files searchable and queryable.</p>
+            <a th:href="@{/login}" class="hero-btn">Start Your First Chat - Free</a>
         </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1 class="hero-title">Transform Your Documents Into Intelligent Conversations</h1>
-                <p class="hero-subtitle">Upload your documents and chat with them instantly. KnowledgeHub makes your files searchable, queryable, and always at your fingertips.</p>
-                <a href="/login" class="hero-btn">Start Your First Chat - Free</a>
-            </div>
-            <div class="hero-image">
-                <div class="document-showcase">
-                    <img src="/img/img.png" alt="KnowledgeHub Document Interface" class="showcase-img">
-                </div>
+        <div class="hero-image">
+            <div class="document-showcase">
+                <img th:src="@{/img/img.png}" alt="KnowledgeHub" class="showcase-img">
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
-        <div class="container">
-            <h2 class="section-title">Why Choose KnowledgeHub</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 2L4 8V16C4 22.628 9.372 28 16 28C22.628 28 28 22.628 28 16V8L16 2Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 10V16L20 18" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Lightning Fast</h3>
-                    <p class="feature-description">Get instant answers from your documents with our advanced AI-powered search technology.</p>
+<section id="features" class="features">
+    <div class="container">
+        <h2 class="section-title">Why Choose KnowledgeHub</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M16 2L4 8V16C4 22.628 9.372 28 16 28C22.628 28 28 22.628 28 16V8L16 2Z"/><path d="M16 10V16L20 18"/></svg>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 4C10.477 4 6 8.477 6 14C6 19.523 10.477 24 16 24C21.523 24 26 19.523 26 14C26 8.477 21.523 4 16 4Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 8V14L20 16" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Secure & Private</h3>
-                    <p class="feature-description">Your documents are encrypted and stored securely. Your data privacy is our top priority.</p>
+                <h3 class="feature-title">Lightning Fast</h3>
+                <p class="feature-description">Get instant answers from your documents with our advanced AI-powered search technology.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M16 4C10.477 4 6 8.477 6 14C6 19.523 10.477 24 16 24C21.523 24 26 19.523 26 14C26 8.477 21.523 4 16 4Z"/><path d="M16 8V14L20 16"/></svg>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 4H20C21.105 4 22 4.895 22 6V26C22 27.105 21.105 28 20 28H12C10.895 28 10 27.105 10 26V6C10 4.895 10.895 4 12 4Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 10V12" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Easy Integration</h3>
-                    <p class="feature-description">Seamlessly integrate KnowledgeHub into your workflow with our simple API and plugins.</p>
+                <h3 class="feature-title">Secure & Private</h3>
+                <p class="feature-description">Your documents are encrypted and stored securely. Your data privacy is our top priority.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M12 4H20C21.105 4 22 4.895 22 6V26C22 27.105 21.105 28 20 28H12C10.895 28 10 27.105 10 26V6C10 4.895 10.895 4 12 4Z"/><path d="M16 10V12"/></svg>
                 </div>
+                <h3 class="feature-title">Easy Integration</h3>
+                <p class="feature-description">Seamlessly integrate KnowledgeHub into your workflow with our simple API.</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- How it Works Section -->
-    <section id="how-it-works" class="how-it-works">
-        <div class="container">
-            <h2 class="section-title">How it Works</h2>
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <div class="step-icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M32 16L24 8L16 16" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M24 8V32" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M8 40H40" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="step-title">Upload Documents</h3>
-                    <p class="step-description">Upload your PDFs, Word documents, or text files to your KnowledgeHub workspace.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <div class="step-icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M24 8C15.163 8 8 15.163 8 24C8 32.837 15.163 40 24 40C32.837 40 40 32.837 40 24C40 15.163 32.837 8 24 8Z" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M24 16V24L30 28" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="step-title">AI Processing</h3>
-                    <p class="step-description">Our AI analyzes and indexes your documents to make them searchable and queryable.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <div class="step-icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 20L24 28L32 20" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M24 12V28" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="step-title">Chat & Query</h3>
-                    <p class="step-description">Start chatting with your documents. Ask questions and get instant, accurate answers.</p>
-                </div>
+<section id="how-it-works" class="how-it-works">
+    <div class="container">
+        <h2 class="section-title">How it Works</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Upload Documents</h3>
+                <p class="step-description">Upload your PDFs or Word documents to your workspace.</p>
             </div>
-            <div class="steps-cta">
-                <a href="/register" class="try-btn">
-                    Try it Now
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 10H15M15 10L11 6M15 10L11 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </a>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3 class="step-title">AI Processing</h3>
+                <p class="step-description">Our AI analyzes your documents to make them queryable.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Chat & Query</h3>
+                <p class="step-description">Ask questions and get instant, accurate answers.</p>
             </div>
         </div>
-    </section>
-
-    <!-- Pricing Section -->
-<!--    <section id="pricing" class="pricing">-->
-<!--        <div class="container">-->
-<!--            <h2 class="section-title">Pricing</h2>-->
-<!--            <div class="pricing-grid">-->
-<!--                <div class="pricing-card">-->
-<!--                    <h3 class="pricing-plan">Free</h3>-->
-<!--                    <div class="pricing-price">-->
-<!--                        <span class="price-amount">$0</span>-->
-<!--                        <span class="price-period">/month</span>-->
-<!--                    </div>-->
-<!--                    <ul class="pricing-features">-->
-<!--                        <li>Up to 10 documents</li>-->
-<!--                        <li>100 queries per month</li>-->
-<!--                        <li>Basic AI responses</li>-->
-<!--                        <li>Community support</li>-->
-<!--                    </ul>-->
-<!--                    <a href="/register" class="pricing-btn">Get Started</a>-->
-<!--                </div>-->
-<!--                <div class="pricing-card featured">-->
-<!--                    <div class="popular-badge">Popular</div>-->
-<!--                    <h3 class="pricing-plan">Pro</h3>-->
-<!--                    <div class="pricing-price">-->
-<!--                        <span class="price-amount">$29</span>-->
-<!--                        <span class="price-period">/month</span>-->
-<!--                    </div>-->
-<!--                    <ul class="pricing-features">-->
-<!--                        <li>Unlimited documents</li>-->
-<!--                        <li>Unlimited queries</li>-->
-<!--                        <li>Advanced AI responses</li>-->
-<!--                        <li>Priority support</li>-->
-<!--                        <li>API access</li>-->
-<!--                    </ul>-->
-<!--                    <a href="/register" class="pricing-btn">Get Started</a>-->
-<!--                </div>-->
-<!--                <div class="pricing-card">-->
-<!--                    <h3 class="pricing-plan">Enterprise</h3>-->
-<!--                    <div class="pricing-price">-->
-<!--                        <span class="price-amount">Custom</span>-->
-<!--                        <span class="price-period"></span>-->
-<!--                    </div>-->
-<!--                    <ul class="pricing-features">-->
-<!--                        <li>Everything in Pro</li>-->
-<!--                        <li>Custom integrations</li>-->
-<!--                        <li>Dedicated support</li>-->
-<!--                        <li>SLA guarantee</li>-->
-<!--                        <li>On-premise option</li>-->
-<!--                    </ul>-->
-<!--                    <a href="/contact" class="pricing-btn">Contact Sales</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </section>-->
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <span class="logo-icon">K</span>
-                    <span class="logo-text">KnowledgeHub</span>
-                </div>
-                <div class="footer-links">
-                    <a href="#features">Features</a>
-                    <a href="#how-it-works">How it Works</a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 KnowledgeHub. All rights reserved.</p>
-            </div>
+        <div class="steps-cta">
+            <a th:href="@{/register}" class="try-btn">Try it Now</a>
         </div>
-    </footer>
+    </div>
+</section>
 
-    <script src="/js/script.js"></script>
+<footer th:replace="~{fragments/common :: public-footer}"></footer>
+
+<script th:src="@{/js/script.js}"></script>
 </body>
 </html>
-

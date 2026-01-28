@@ -1,0 +1,9 @@
+<th:block th:fragment="common-scripts">
+    <script th:src="@{/js/dashboard.js}"></script>
+
+    <script>
+        document.getElementById('mobileMenuToggle')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+    </script>
+</th:block>
