@@ -1,0 +1,41 @@
+<div xmlns:th="http://www.thymeleaf.org">
+
+    <nav th:fragment="public-nav" class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">K</span>
+                <span class="logo-text">KnowledgeHub</span>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How it Works</a></li>
+            </ul>
+            <div class="nav-auth">
+                <a th:href="@{/login}" class="auth-login">Login</a>
+                <a th:href="@{/register}" class="auth-btn">Get Started</a>
+            </div>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <footer th:fragment="public-footer" class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo-icon">K</span>
+                    <span class="logo-text" style="color: white">KnowledgeHub</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How it Works</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p style="color: white">&copy; 2026 KnowledgeHub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</div>

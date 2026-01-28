@@ -16,4 +16,5 @@ public interface UserService {
 
     void deleteUser(String email);
     UserViewDto getUserViewByEmail(String email);
+    ChangeProfileDto getChangeProfileDto(String email);
 }

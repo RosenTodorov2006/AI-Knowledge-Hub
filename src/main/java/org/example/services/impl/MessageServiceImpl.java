@@ -23,7 +23,8 @@ public class MessageServiceImpl implements MessageService {
     private final DocumentChunkRepository documentChunkRepository;
 
     public MessageServiceImpl(MessageRepository messageRepository,
-                              MessageContextSourceRepository messageContextSourceRepository, DocumentChunkRepository documentChunkRepository) {
+                              MessageContextSourceRepository messageContextSourceRepository,
+                              DocumentChunkRepository documentChunkRepository) {
         this.messageRepository = messageRepository;
         this.messageContextSourceRepository = messageContextSourceRepository;
         this.documentChunkRepository = documentChunkRepository;
@@ -32,23 +33,32 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional
     public Message saveMessage(Chat chat, String content, MessageRole role) {
-        Message message = new Message();
-        message.setChat(chat);
-        message.setContent(content);
-        message.setRole(role);
-        message.setCreatedAt(LocalDateTime.now());
+        Message message = createMessage(chat, content, role);
         return messageRepository.save(message);
     }
 
     @Override
     @Transactional
     public void saveMessageSources(Message message, List<ChunkSearchResult> searchResults) {
-        for (ChunkSearchResult res : searchResults) {
-            MessageContextSource source = new MessageContextSource();
-            source.setMessage(message);
-            source.setChunk(documentChunkRepository.getReferenceById(res.getId()));
-            source.setScore(res.getSimilarity());
-            messageContextSourceRepository.save(source);
-        }
+        searchResults.stream()
+                .map(res -> mapToContextSource(message, res))
+                .forEach(messageContextSourceRepository::save);
+    }
+
+    private Message createMessage(Chat chat, String content, MessageRole role) {
+        Message message = new Message();
+        message.setChat(chat);
+        message.setContent(content);
+        message.setRole(role);
+        message.setCreatedAt(LocalDateTime.now());
+        return message;
+    }
+
+    private MessageContextSource mapToContextSource(Message message, ChunkSearchResult result) {
+        MessageContextSource source = new MessageContextSource();
+        source.setMessage(message);
+        source.setChunk(documentChunkRepository.getReferenceById(result.getId()));
+        source.setScore(result.getSimilarity());
+        return source;
     }
 }

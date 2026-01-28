@@ -28,15 +28,25 @@ import java.util.concurrent.Executor;
 
 @Service
 public class DocumentProcessingServiceImpl implements DocumentProcessingService {
+
+    private static final String ERR_JOB_NOT_FOUND = "Job not found";
+    private static final String REGEX_WHITESPACE = "\\s+";
+    private static final String SENTENCE_DOT_SPACE = ". ";
+
+    private static final int CHUNK_CHARACTER_LIMIT = 800;
+    private static final int DOT_OFFSET = 1;
+
     private final ProcessingJobRepository processingJobRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final EmbeddingModel embeddingModel;
+
     @Qualifier("taskExecutor")
     private final Executor taskExecutor;
 
     public DocumentProcessingServiceImpl(ProcessingJobRepository processingJobRepository,
                                          DocumentChunkRepository documentChunkRepository,
-                                         EmbeddingModel embeddingModel, Executor taskExecutor) {
+                                         EmbeddingModel embeddingModel,
+                                         Executor taskExecutor) {
         this.processingJobRepository = processingJobRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.embeddingModel = embeddingModel;
@@ -49,7 +59,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     @TrackProcessing
     public void processDocument(Long documentId) {
         ProcessingJob job = processingJobRepository.findByDocumentId(documentId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new RuntimeException(ERR_JOB_NOT_FOUND));
         Document document = job.getDocument();
 
         try {
@@ -61,9 +71,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
 
             updateJobStage(job, ProcessingJobStage.COMPLETED);
         } catch (Exception e) {
-            job.setStage(ProcessingJobStage.FAILED);
-            job.setErrorMessage(e.getMessage());
-            processingJobRepository.save(job);
+            handleProcessingFailure(job, e);
         }
     }
 
@@ -73,51 +81,13 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         }
     }
 
-    private List<String> prepareSemanticChunks(String text, int limit) {
-        List<String> chunks = new ArrayList<>();
-        BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.US);
-        iterator.setText(text);
-
-        StringBuilder currentChunk = new StringBuilder();
-        int start = iterator.first();
-        for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
-            String sentence = text.substring(start, end);
-
-            if (currentChunk.length() + sentence.length() > limit && !currentChunk.isEmpty()) {
-                chunks.add(currentChunk.toString().trim());
-
-                int lastDot = currentChunk.lastIndexOf(". ");
-                String context = (lastDot != -1) ? currentChunk.substring(lastDot + 1) : "";
-                currentChunk = new StringBuilder(context);
-            }
-            currentChunk.append(sentence);
-        }
-        if (!currentChunk.isEmpty()) {
-            chunks.add(currentChunk.toString().trim());
-        }
-        return chunks;
-    }
-
     private void processChunks(Document document, String text) {
-        List<String> semanticChunks = prepareSemanticChunks(text, 800);
-        Long docId = document.getId();
+        List<String> semanticChunks = prepareSemanticChunks(text, CHUNK_CHARACTER_LIMIT);
 
         List<CompletableFuture<DocumentChunk>> futures = semanticChunks.stream()
-                .map(content -> CompletableFuture.supplyAsync(() -> {
-                    List<Double> vector = embeddingModel.embed(content);
-
-                    DocumentChunk chunk = new DocumentChunk();
-
-                    Document docProxy = new Document();
-                    docProxy.setId(docId);
-                    chunk.setDocument(docProxy);
-
-                    chunk.setContent(content);
-                    chunk.setEmbedding(vector);
-                    chunk.setTokenCount(content.split("\\s+").length);
-
-                    return chunk;
-                }, taskExecutor))
+                .map(content -> CompletableFuture.supplyAsync(
+                        () -> createChunkWithEmbedding(document.getId(), content),
+                        taskExecutor))
                 .toList();
 
         List<DocumentChunk> allChunks = futures.stream()
@@ -128,8 +98,71 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         documentChunkRepository.flush();
     }
 
+    private DocumentChunk createChunkWithEmbedding(Long docId, String content) {
+        List<Double> vector = embeddingModel.embed(content);
+
+        DocumentChunk chunk = new DocumentChunk();
+        Document docProxy = new Document();
+        docProxy.setId(docId);
+
+        chunk.setDocument(docProxy);
+        chunk.setContent(content);
+        chunk.setEmbedding(vector);
+        chunk.setTokenCount(calculateTokenCount(content));
+
+        return chunk;
+    }
+
+    private List<String> prepareSemanticChunks(String text, int limit) {
+        List<String> chunks = new ArrayList<>();
+        BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.US);
+        iterator.setText(text);
+
+        StringBuilder currentChunk = new StringBuilder();
+        int start = iterator.first();
+
+        for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
+            String sentence = text.substring(start, end);
+
+            if (shouldStartNewChunk(currentChunk, sentence, limit)) {
+                chunks.add(currentChunk.toString().trim());
+                currentChunk = startNewChunkWithContext(currentChunk);
+            }
+            currentChunk.append(sentence);
+        }
+
+        addRemainingContent(chunks, currentChunk);
+        return chunks;
+    }
+
+    private boolean shouldStartNewChunk(StringBuilder current, String sentence, int limit) {
+        return current.length() + sentence.length() > limit && !current.isEmpty();
+    }
+
+    private StringBuilder startNewChunkWithContext(StringBuilder currentChunk) {
+        int lastDotIndex = currentChunk.lastIndexOf(SENTENCE_DOT_SPACE);
+        String context = (lastDotIndex != -1) ? currentChunk.substring(lastDotIndex + DOT_OFFSET) : "";
+        return new StringBuilder(context);
+    }
+
+    private void addRemainingContent(List<String> chunks, StringBuilder currentChunk) {
+        if (!currentChunk.isEmpty()) {
+            chunks.add(currentChunk.toString().trim());
+        }
+    }
+
+    private int calculateTokenCount(String content) {
+        return content.split(REGEX_WHITESPACE).length;
+    }
+
     private void updateJobStage(ProcessingJob job, ProcessingJobStage stage) {
         job.setStage(stage);
+        processingJobRepository.save(job);
+    }
+
+    private void handleProcessingFailure(ProcessingJob job, Exception e) {
+        job.setStage(ProcessingJobStage.FAILED);
+        job.setErrorMessage(e.getMessage());
         processingJobRepository.save(job);
     }
 }
