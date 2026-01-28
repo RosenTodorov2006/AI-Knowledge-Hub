@@ -14,7 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.security.Principal;
 
 @Controller
-public class DashboardController {
+public class ChatController {
 
     public static final String VIEW_DASHBOARD = "dashboard";
     public static final String VIEW_CHAT = "chat";
@@ -34,7 +34,7 @@ public class DashboardController {
     private final ChatService chatService;
     private final UserService userService;
 
-    public DashboardController(DashboardService dashboardService, ChatService chatService, UserService userService) {
+    public ChatController(DashboardService dashboardService, ChatService chatService, UserService userService) {
         this.dashboardService = dashboardService;
         this.chatService = chatService;
         this.userService = userService;

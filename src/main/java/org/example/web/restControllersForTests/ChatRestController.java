@@ -17,7 +17,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chats")
-public class DashboardRestController {
+public class ChatRestController {
     public static final String JSON_KEY_ERROR = "error";
     public static final String ERR_MSG_EMPTY_FILE = "Please select a file.";
     public static final String ERR_MSG_PROCESS_PREFIX = "Processing error: ";
@@ -25,7 +25,7 @@ public class DashboardRestController {
     private final DashboardService dashboardService;
     private final ChatService chatService;
 
-    public DashboardRestController(DashboardService dashboardService, ChatService chatService) {
+    public ChatRestController(DashboardService dashboardService, ChatService chatService) {
         this.dashboardService = dashboardService;
         this.chatService = chatService;
     }
