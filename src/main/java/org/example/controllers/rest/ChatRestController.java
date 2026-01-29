@@ -1,4 +1,4 @@
-package org.example.web.restControllersForTests;
+package org.example.controllers.rest;
 
 import org.example.models.dtos.exportDtos.ChatDto;
 import org.example.models.dtos.exportDtos.ChatResponseDto;

@@ -10,6 +10,8 @@ import org.example.repositories.ChunkSearchResult;
 import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.MessageContextSourceRepository;
 import org.example.repositories.MessageRepository;
+import org.example.services.DocumentProcessingService;
+import org.example.services.MessageContextSourceService;
 import org.example.services.MessageService;
 import org.springframework.stereotype.Service;
 
@@ -19,15 +21,11 @@ import java.util.List;
 @Service
 public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
-    private final MessageContextSourceRepository messageContextSourceRepository;
-    private final DocumentChunkRepository documentChunkRepository;
+    private final MessageContextSourceService messageContextSourceService;
 
-    public MessageServiceImpl(MessageRepository messageRepository,
-                              MessageContextSourceRepository messageContextSourceRepository,
-                              DocumentChunkRepository documentChunkRepository) {
+    public MessageServiceImpl(MessageRepository messageRepository, MessageContextSourceService messageContextSourceService) {
         this.messageRepository = messageRepository;
-        this.messageContextSourceRepository = messageContextSourceRepository;
-        this.documentChunkRepository = documentChunkRepository;
+        this.messageContextSourceService = messageContextSourceService;
     }
 
     @Override
@@ -40,9 +38,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional
     public void saveMessageSources(Message message, List<ChunkSearchResult> searchResults) {
-        searchResults.stream()
-                .map(res -> mapToContextSource(message, res))
-                .forEach(messageContextSourceRepository::save);
+        searchResults.forEach(res -> messageContextSourceService.saveSource(message, res));
     }
 
     private Message createMessage(Chat chat, String content, MessageRole role) {
@@ -52,13 +48,5 @@ public class MessageServiceImpl implements MessageService {
         message.setRole(role);
         message.setCreatedAt(LocalDateTime.now());
         return message;
-    }
-
-    private MessageContextSource mapToContextSource(Message message, ChunkSearchResult result) {
-        MessageContextSource source = new MessageContextSource();
-        source.setMessage(message);
-        source.setChunk(documentChunkRepository.getReferenceById(result.getId()));
-        source.setScore(result.getSimilarity());
-        return source;
     }
 }

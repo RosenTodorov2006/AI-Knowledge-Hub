@@ -11,6 +11,7 @@ import org.example.repositories.UserRepository;
 import org.example.services.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -101,5 +102,11 @@ public class UserServiceImpl implements UserService {
         dto.setEmail(user.getEmail());
         dto.setFullName(user.getFullName());
         return dto;
+    }
+
+    @Override
+    public UserEntity findUserByEmail(String gmail) {
+        return userRepository.findByEmail(gmail)
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
     }
 }

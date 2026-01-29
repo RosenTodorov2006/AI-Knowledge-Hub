@@ -1,4 +1,4 @@
-package org.example.web;
+package org.example.controllers.web;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;

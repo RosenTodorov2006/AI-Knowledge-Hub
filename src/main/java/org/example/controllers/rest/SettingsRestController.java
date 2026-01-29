@@ -1,4 +1,4 @@
-package org.example.web.restControllersForTests;
+package org.example.controllers.rest;
 
 import jakarta.validation.Valid;
 import org.example.models.dtos.exportDtos.UserViewDto;

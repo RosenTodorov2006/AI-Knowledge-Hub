@@ -8,9 +8,11 @@ import org.example.models.entities.Document;
 import org.example.models.entities.DocumentChunk;
 import org.example.models.entities.ProcessingJob;
 import org.example.models.entities.enums.ProcessingJobStage;
+import org.example.repositories.ChunkSearchResult;
 import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.services.DocumentProcessingService;
+import org.example.services.ProcessingJobService;
 import org.example.validation.annotation.TrackProcessing;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,26 +30,24 @@ import java.util.concurrent.Executor;
 
 @Service
 public class DocumentProcessingServiceImpl implements DocumentProcessingService {
-
-    private static final String ERR_JOB_NOT_FOUND = "Job not found";
     private static final String REGEX_WHITESPACE = "\\s+";
     private static final String SENTENCE_DOT_SPACE = ". ";
 
     private static final int CHUNK_CHARACTER_LIMIT = 800;
     private static final int DOT_OFFSET = 1;
 
-    private final ProcessingJobRepository processingJobRepository;
+    private final ProcessingJobService processingJobService;
     private final DocumentChunkRepository documentChunkRepository;
     private final EmbeddingModel embeddingModel;
 
     @Qualifier("taskExecutor")
     private final Executor taskExecutor;
 
-    public DocumentProcessingServiceImpl(ProcessingJobRepository processingJobRepository,
+    public DocumentProcessingServiceImpl(ProcessingJobService processingJobService,
                                          DocumentChunkRepository documentChunkRepository,
                                          EmbeddingModel embeddingModel,
                                          Executor taskExecutor) {
-        this.processingJobRepository = processingJobRepository;
+        this.processingJobService = processingJobService;
         this.documentChunkRepository = documentChunkRepository;
         this.embeddingModel = embeddingModel;
         this.taskExecutor = taskExecutor;
@@ -58,8 +58,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     @Transactional
     @TrackProcessing
     public void processDocument(Long documentId) {
-        ProcessingJob job = processingJobRepository.findByDocumentId(documentId)
-                .orElseThrow(() -> new RuntimeException(ERR_JOB_NOT_FOUND));
+        ProcessingJob job = processingJobService.findByDocumentId(documentId);
         Document document = job.getDocument();
 
         try {
@@ -73,6 +72,16 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         } catch (Exception e) {
             handleProcessingFailure(job, e);
         }
+    }
+
+    @Override
+    public DocumentChunk getChunkById(long id) {
+        return documentChunkRepository.getReferenceById(id);
+    }
+
+    @Override
+    public List<ChunkSearchResult> findTopSimilar(long documentId, float[] queryVector, int defaultTopK) {
+        return documentChunkRepository.findTopSimilar(documentId, queryVector, defaultTopK);
     }
 
     private String extractText(byte[] content) throws IOException {
@@ -157,12 +166,16 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
 
     private void updateJobStage(ProcessingJob job, ProcessingJobStage stage) {
         job.setStage(stage);
-        processingJobRepository.save(job);
+        processingJobService.saveProcessingJob(job);
     }
 
     private void handleProcessingFailure(ProcessingJob job, Exception e) {
         job.setStage(ProcessingJobStage.FAILED);
         job.setErrorMessage(e.getMessage());
-        processingJobRepository.save(job);
+        processingJobService.saveProcessingJob(job);
+    }
+    @Override
+    public long getTotalVectorCount() {
+        return documentChunkRepository.count();
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ValidatePasswordValidator implements ConstraintValidator<ValidPasswords, Object> {
+public class EqualsPasswordValidator implements ConstraintValidator<ValidPasswords, Object> {
     private static final String FIELD_PASSWORD = "password";
     private static final String FIELD_CONFIRM_PASSWORD = "confirmPassword";
     private String message;

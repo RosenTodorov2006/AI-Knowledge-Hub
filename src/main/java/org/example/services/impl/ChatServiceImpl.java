@@ -9,9 +9,7 @@ import org.example.models.entities.enums.DocumentStatus;
 import org.example.models.entities.enums.MessageRole;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.repositories.*;
-import org.example.services.ChatService;
-import org.example.services.DocumentProcessingService;
-import org.example.services.MessageService;
+import org.example.services.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,61 +60,40 @@ public class ChatServiceImpl implements ChatService {
     private static final String ERR_ASSISTANT_RUN_FAILED = "Assistant run failed";
     public static final String ERR_ACCESS_DENIED = "You do not have access to this chat!";
     private final RestTemplate restTemplate = new RestTemplate();
-    private final UserRepository userRepository;
-    private final DocumentRepository documentRepository;
     private final ChatRepository chatRepository;
-    private final ProcessingJobRepository processingJobRepository;
     private final DocumentProcessingService documentProcessingService;
     private final MessageService messageService;
     private final EmbeddingModel embeddingModel;
-    private final DocumentChunkRepository documentChunkRepository;
     private final ModelMapper modelMapper;
+    private final UserService userService;
+    private final ProcessingJobService processingJobService;
+    private final DocumentService documentService;
 
     @Value("${spring.ai.openai.api-key}")
     private String apiKey;
 
-    public ChatServiceImpl(UserRepository userRepository, DocumentRepository documentRepository, ChatRepository chatRepository, ProcessingJobRepository processingJobRepository, DocumentProcessingService documentProcessingService, MessageService messageService, EmbeddingModel embeddingModel, DocumentChunkRepository documentChunkRepository, ModelMapper modelMapper) {
-        this.userRepository = userRepository;
-        this.documentRepository = documentRepository;
+    public ChatServiceImpl(ChatRepository chatRepository, DocumentProcessingService documentProcessingService,
+                           MessageService messageService, EmbeddingModel embeddingModel, ModelMapper modelMapper, UserService userService, ProcessingJobService processingJobService, DocumentService documentService) {
         this.chatRepository = chatRepository;
-        this.processingJobRepository = processingJobRepository;
         this.documentProcessingService = documentProcessingService;
         this.messageService = messageService;
         this.embeddingModel = embeddingModel;
-        this.documentChunkRepository = documentChunkRepository;
         this.modelMapper = modelMapper;
+        this.userService = userService;
+        this.processingJobService = processingJobService;
+        this.documentService = documentService;
     }
 
     @Override
     @Transactional
     public ChatViewDto startNewChat(MultipartFile file, String userEmail) throws IOException {
-        UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
-
-        Document document = saveNewDocument(file);
-        createProcessingJob(document);
+        UserEntity user = userService.findUserByEmail(userEmail);
+        Document document = documentService.saveDocument(file);
+        processingJobService.createProcessingJob(document);
         Chat chat = saveNewChat(user, document);
-
         triggerAsyncProcessing(document.getId());
 
         return mapToChatViewDto(chat);
-    }
-
-    private Document saveNewDocument(MultipartFile file) throws IOException {
-        Document document = new Document();
-        document.setFilename(file.getOriginalFilename());
-        document.setMimeType(file.getContentType());
-        document.setDocumentStatus(DocumentStatus.UPLOADED);
-        document.setUploadedAt(LocalDateTime.now());
-        document.setContent(file.getBytes());
-        return documentRepository.save(document);
-    }
-
-    private void createProcessingJob(Document document) {
-        ProcessingJob job = new ProcessingJob();
-        job.setDocument(document);
-        job.setStage(ProcessingJobStage.UPLOADED);
-        processingJobRepository.save(job);
     }
 
     private Chat saveNewChat(UserEntity user, Document document) {
@@ -126,6 +103,13 @@ public class ChatServiceImpl implements ChatService {
         chat.setDocument(document);
         chat.setLastMessageAt(LocalDateTime.now());
         return chatRepository.save(chat);
+    }
+
+    @Override
+    public String findUserEmailByDocument(Document document) {
+        return chatRepository.findByDocument(document)
+                .map(chat -> chat.getUser().getEmail())
+                .orElse("System/Unknown");
     }
 
     private void triggerAsyncProcessing(Long documentId) {
@@ -161,17 +145,17 @@ public class ChatServiceImpl implements ChatService {
         String contextText = buildContextString(topResults);
 
         String threadId = getOrInitThread(chat);
-        String aiAnswer = getAssistantReply(threadId, content, contextText);
+        String aiResponse = getAssistantReply(threadId, content, contextText);
 
-        Message aiMessage = messageService.saveMessage(chat, aiAnswer, MessageRole.ASSISTANT);
+        Message aiMessage = messageService.saveMessage(chat, aiResponse, MessageRole.ASSISTANT);
         messageService.saveMessageSources(aiMessage, topResults);
 
-        return new ChatResponseDto(aiAnswer, aiMessage.getId());
+        return new ChatResponseDto(aiResponse, aiMessage.getId());
     }
 
     private List<ChunkSearchResult> searchContext(Long documentId, String query) {
         float[] queryVector = convertToFloatArray(embeddingModel.embed(query));
-        return documentChunkRepository.findTopSimilar(documentId, queryVector, DEFAULT_TOP_K);
+        return this.documentProcessingService.findTopSimilar(documentId, queryVector, DEFAULT_TOP_K);
     }
 
     private String buildContextString(List<ChunkSearchResult> results) {
@@ -288,6 +272,11 @@ public class ChatServiceImpl implements ChatService {
         dto.setLastMessageAt(determineLastMessageDate(messages));
 
         return dto;
+    }
+
+    @Override
+    public List<Chat> findAllChatsByUserEntityId(long userId) {
+        return chatRepository.findAllByUserEntityId(userId);
     }
 
     private ProcessingJobStage resolveProcessingStage(Chat chat) {

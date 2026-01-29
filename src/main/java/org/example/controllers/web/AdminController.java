@@ -1,4 +1,4 @@
-package org.example.web;
+package org.example.controllers.web;
 import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.services.AdminService;
 import org.example.services.UserService;

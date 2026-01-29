@@ -11,6 +11,9 @@ import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.DocumentRepository;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.services.AdminService;
+import org.example.services.ChatService;
+import org.example.services.DocumentProcessingService;
+import org.example.services.ProcessingJobService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -37,25 +40,21 @@ public class AdminServiceImpl implements AdminService {
     private static final String UNIT_MINUTES = "m ago";
     private static final String UNIT_HOURS = "h ago";
     private static final String UNIT_DAYS = "d ago";
-
-    private final ProcessingJobRepository processingJobRepository;
-    private final ChatRepository chatRepository;
-    private final DocumentChunkRepository documentChunkRepository;
     private final ModelMapper modelMapper;
+    private final ProcessingJobService processingJobService;
+    private final DocumentProcessingService documentProcessingService;
+    private final ChatService chatService;
 
-    public AdminServiceImpl(ProcessingJobRepository processingJobRepository,
-                            ChatRepository chatRepository,
-                            DocumentChunkRepository documentChunkRepository,
-                            ModelMapper modelMapper) {
-        this.processingJobRepository = processingJobRepository;
-        this.chatRepository = chatRepository;
-        this.documentChunkRepository = documentChunkRepository;
+    public AdminServiceImpl(ModelMapper modelMapper, ProcessingJobService processingJobService, DocumentProcessingService documentProcessingService, ChatService chatService) {
         this.modelMapper = modelMapper;
+        this.processingJobService = processingJobService;
+        this.documentProcessingService = documentProcessingService;
+        this.chatService = chatService;
     }
 
     @Override
     public List<ProcessingJobDto> getFailedJobs() {
-        return processingJobRepository.findAllByStage(ProcessingJobStage.FAILED)
+        return processingJobService.findAllFailedJobs()
                 .stream()
                 .map(this::convertToFailedJobDto)
                 .collect(Collectors.toList());
@@ -63,33 +62,26 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public AdminStatsDto getSystemStats() {
-        long processing = processingJobRepository.countByStageNotAndErrorMessageIsNull(ProcessingJobStage.COMPLETED);
-        long completed = processingJobRepository.countByStage(ProcessingJobStage.COMPLETED);
-        long failed = processingJobRepository.countByErrorMessageIsNotNull();
-
+        long processing = processingJobService.countRunningJobs();
+        long completed = processingJobService.countCompletedJobs();
+        long failed = processingJobService.countFailedJobs();
         double successRate = calculateSuccessRate(completed, failed);
-        String formattedVectors = formatVectorCount(documentChunkRepository.count());
+        long totalVectors = documentProcessingService.getTotalVectorCount();
+        String formattedVectors = formatVectorCount(totalVectors);
 
         return new AdminStatsDto(processing, successRate, formattedVectors);
     }
 
     private ProcessingJobDto convertToFailedJobDto(ProcessingJob job) {
         ProcessingJobDto dto = modelMapper.map(job, ProcessingJobDto.class);
-
         dto.setJobId(JOB_ID_PREFIX + job.getId());
         dto.setFileName(job.getDocument().getFilename());
-        dto.setUserEmail(findUserEmailByDocument(job.getDocument()));
+        dto.setUserEmail(chatService.findUserEmailByDocument(job.getDocument()));
+
         dto.setTimeAgo(formatTimeAgo(job.getDocument().getUploadedAt()));
 
         enrichStageFlags(dto, job.getStage());
-
         return dto;
-    }
-
-    private String findUserEmailByDocument(Document document) {
-        return chatRepository.findByDocument(document)
-                .map(chat -> chat.getUserEntity().getEmail())
-                .orElse(DEFAULT_USER_EMAIL);
     }
 
     private void enrichStageFlags(ProcessingJobDto dto, ProcessingJobStage currentStage) {

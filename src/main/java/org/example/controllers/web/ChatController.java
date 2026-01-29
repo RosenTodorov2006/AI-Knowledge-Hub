@@ -1,4 +1,4 @@
-package org.example.web;
+package org.example.controllers.web;
 
 import jakarta.servlet.http.HttpSession;
 import org.example.models.dtos.exportDtos.ChatViewDto;
