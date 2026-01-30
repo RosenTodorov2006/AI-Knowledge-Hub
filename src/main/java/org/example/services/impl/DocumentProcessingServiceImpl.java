@@ -13,6 +13,8 @@ import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.services.DocumentProcessingService;
 import org.example.services.ProcessingJobService;
+import org.example.utils.FileUtils;
+import org.example.utils.TextUtils;
 import org.example.validation.annotation.TrackProcessing;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,11 +32,7 @@ import java.util.concurrent.Executor;
 
 @Service
 public class DocumentProcessingServiceImpl implements DocumentProcessingService {
-    private static final String REGEX_WHITESPACE = "\\s+";
-    private static final String SENTENCE_DOT_SPACE = ". ";
-
     private static final int CHUNK_CHARACTER_LIMIT = 800;
-    private static final int DOT_OFFSET = 1;
 
     private final ProcessingJobService processingJobService;
     private final DocumentChunkRepository documentChunkRepository;
@@ -63,7 +61,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
 
         try {
             updateJobStage(job, ProcessingJobStage.PARSING);
-            String text = extractText(document.getContent());
+            String text = FileUtils.extractTextFromPdf(document.getContent());
 
             updateJobStage(job, ProcessingJobStage.INDEXING);
             processChunks(document, text);
@@ -84,14 +82,13 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         return documentChunkRepository.findTopSimilar(documentId, queryVector, defaultTopK);
     }
 
-    private String extractText(byte[] content) throws IOException {
-        try (PDDocument pdf = Loader.loadPDF(content)) {
-            return new PDFTextStripper().getText(pdf);
-        }
+    @Override
+    public long getTotalVectorCount() {
+        return documentChunkRepository.count();
     }
 
     private void processChunks(Document document, String text) {
-        List<String> semanticChunks = prepareSemanticChunks(text, CHUNK_CHARACTER_LIMIT);
+        List<String> semanticChunks = TextUtils.prepareSemanticChunks(text, CHUNK_CHARACTER_LIMIT);
 
         List<CompletableFuture<DocumentChunk>> futures = semanticChunks.stream()
                 .map(content -> CompletableFuture.supplyAsync(
@@ -104,7 +101,6 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
                 .toList();
 
         documentChunkRepository.saveAll(allChunks);
-        documentChunkRepository.flush();
     }
 
     private DocumentChunk createChunkWithEmbedding(Long docId, String content) {
@@ -117,51 +113,9 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         chunk.setDocument(docProxy);
         chunk.setContent(content);
         chunk.setEmbedding(vector);
-        chunk.setTokenCount(calculateTokenCount(content));
+        chunk.setTokenCount(TextUtils.calculateTokenCount(content));
 
         return chunk;
-    }
-
-    private List<String> prepareSemanticChunks(String text, int limit) {
-        List<String> chunks = new ArrayList<>();
-        BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.US);
-        iterator.setText(text);
-
-        StringBuilder currentChunk = new StringBuilder();
-        int start = iterator.first();
-
-        for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
-            String sentence = text.substring(start, end);
-
-            if (shouldStartNewChunk(currentChunk, sentence, limit)) {
-                chunks.add(currentChunk.toString().trim());
-                currentChunk = startNewChunkWithContext(currentChunk);
-            }
-            currentChunk.append(sentence);
-        }
-
-        addRemainingContent(chunks, currentChunk);
-        return chunks;
-    }
-
-    private boolean shouldStartNewChunk(StringBuilder current, String sentence, int limit) {
-        return current.length() + sentence.length() > limit && !current.isEmpty();
-    }
-
-    private StringBuilder startNewChunkWithContext(StringBuilder currentChunk) {
-        int lastDotIndex = currentChunk.lastIndexOf(SENTENCE_DOT_SPACE);
-        String context = (lastDotIndex != -1) ? currentChunk.substring(lastDotIndex + DOT_OFFSET) : "";
-        return new StringBuilder(context);
-    }
-
-    private void addRemainingContent(List<String> chunks, StringBuilder currentChunk) {
-        if (!currentChunk.isEmpty()) {
-            chunks.add(currentChunk.toString().trim());
-        }
-    }
-
-    private int calculateTokenCount(String content) {
-        return content.split(REGEX_WHITESPACE).length;
     }
 
     private void updateJobStage(ProcessingJob job, ProcessingJobStage stage) {
@@ -173,9 +127,5 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         job.setStage(ProcessingJobStage.FAILED);
         job.setErrorMessage(e.getMessage());
         processingJobService.saveProcessingJob(job);
-    }
-    @Override
-    public long getTotalVectorCount() {
-        return documentChunkRepository.count();
     }
 }

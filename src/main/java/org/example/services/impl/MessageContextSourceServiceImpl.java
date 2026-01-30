@@ -23,7 +23,6 @@ public class MessageContextSourceServiceImpl implements MessageContextSourceServ
         source.setMessage(message);
         source.setChunk(documentProcessingService.getChunkById(result.getId()));
         source.setScore(result.getSimilarity());
-
         messageContextSourceRepository.save(source);
     }
 }

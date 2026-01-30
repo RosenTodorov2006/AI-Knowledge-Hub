@@ -11,6 +11,8 @@ import org.example.models.entities.enums.MessageRole;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.repositories.*;
 import org.example.services.*;
+import org.example.utils.TextUtils;
+import org.example.utils.VectorUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +34,6 @@ import static org.example.services.impl.UserServiceImpl.ERR_USER_NOT_FOUND;
 @Service
 public class ChatServiceImpl implements ChatService {
     public static final String ERR_CHAT_NOT_FOUND = "Chat not found";
-    public static final String ERR_USER_NOT_FOUND = "User not found!";
     public static final String ERR_ACCESS_DENIED = "You do not have access to this chat!";
     private static final String CONTEXT_SEPARATOR = "\n---\n";
     private static final String PROMPT_TEMPLATE = "Context:\n%s\n\nQuestion: %s";
@@ -89,7 +90,8 @@ public class ChatServiceImpl implements ChatService {
         messageService.saveMessage(chat, content, MessageRole.USER);
 
         List<ChunkSearchResult> topResults = searchContext(chat.getDocument().getId(), content);
-        String contextText = buildContextString(topResults);
+
+        String contextText = TextUtils.joinChunkContents(topResults, CONTEXT_SEPARATOR);
 
         String threadId = getOrInitThread(chat);
         String combinedPrompt = String.format(PROMPT_TEMPLATE, contextText, content);
@@ -130,14 +132,6 @@ public class ChatServiceImpl implements ChatService {
         return chatRepository.findAllByUserEntityId(userId);
     }
 
-    private Chat saveNewChat(UserEntity user, Document document) {
-        Chat chat = new Chat();
-        chat.setTitle(document.getFilename());
-        chat.setUser(user);
-        chat.setDocument(document);
-        chat.setLastMessageAt(LocalDateTime.now());
-        return chatRepository.save(chat);
-    }
 
     private String getOrInitThread(Chat chat) {
         if (chat.getOpenAiThreadId() == null) {
@@ -149,14 +143,8 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private List<ChunkSearchResult> searchContext(Long documentId, String query) {
-        float[] queryVector = convertToFloatArray(embeddingModel.embed(query));
+        float[] queryVector = VectorUtils.toFloatArray(embeddingModel.embed(query));
         return this.documentProcessingService.findTopSimilar(documentId, queryVector, DEFAULT_TOP_K);
-    }
-
-    private String buildContextString(List<ChunkSearchResult> results) {
-        return results.stream()
-                .map(ChunkSearchResult::getContent)
-                .collect(Collectors.joining(CONTEXT_SEPARATOR));
     }
 
     private void triggerAsyncProcessing(Long documentId) {
@@ -172,21 +160,29 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    private ChatViewDto mapToChatViewDto(Chat chat) {
-        ChatViewDto dto = new ChatViewDto();
-        dto.setId(chat.getId());
-        dto.setTitle(chat.getTitle());
-        dto.setDocumentFilename(chat.getDocument().getFilename());
-        dto.setLastMessageAt(chat.getLastMessageAt());
-        return dto;
+    private Chat saveNewChat(UserEntity user, Document document) {
+        Chat chat = new Chat(
+                document.getFilename(),
+                user,
+                document,
+                LocalDateTime.now()
+        );
+        return chatRepository.save(chat);
     }
 
-    private float[] convertToFloatArray(List<Double> doubles) {
-        float[] floats = new float[doubles.size()];
-        for (int i = 0; i < doubles.size(); i++) {
-            floats[i] = doubles.get(i).floatValue();
+    private ChatViewDto mapToChatViewDto(Chat chat) {
+        ChatViewDto dto = this.modelMapper.map(chat, ChatViewDto.class);
+        dto.setLastMessageAt(chat.getLastMessageAt());
+        if (chat.getDocument() != null) {
+            dto.setDocumentFilename(chat.getDocument().getFilename());
+            dto.setDocumentId(chat.getDocument().getId());
+            if (chat.getDocument().getProcessingJob() != null) {
+                dto.setStage(chat.getDocument().getProcessingJob().getStage());
+            } else {
+                dto.setStage(ProcessingJobStage.UPLOADED);
+            }
         }
-        return floats;
+        return dto;
     }
 
     private ProcessingJobStage resolveProcessingStage(Chat chat) {

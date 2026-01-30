@@ -32,6 +32,13 @@ public class Chat extends BaseEntity{
         this.document = document;
         this.openAiThreadId = openAiThreadId;
     }
+    public Chat(String title, UserEntity userEntity, Document document, LocalDateTime lastMessageAt) {
+        this.title = title;
+        this.userEntity = userEntity;
+        this.document = document;
+        this.lastMessageAt = lastMessageAt;
+    }
+
 
     public Chat() {
     }
