@@ -24,11 +24,6 @@ import java.security.Principal;
 @Controller
 @RequestMapping("/settings")
 public class SettingsController {
-    public static final String VIEW_SETTINGS = "settings";
-    public static final String REDIRECT_SETTINGS = "redirect:/settings";
-    public static final String REDIRECT_HOME_DEACTIVATED = "redirect:/?deactivated=true";
-    public static final String PARAM_SUCCESS = "success=true";
-    public static final String PARAM_PW_SUCCESS = "pwSuccess=true";
     public static final String ATTR_CHANGE_PROFILE = "changeProfileDto";
     public static final String ATTR_CHANGE_PASSWORD = "changeUserPasswordDto";
     public static final String ATTR_INVALID_PROFILE = "invalidProfileInfoData";
@@ -53,7 +48,7 @@ public class SettingsController {
         ensureDefaultAttributes(model);
         model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
 
-        return VIEW_SETTINGS;
+        return "settings";
     }
 
     @PostMapping("/changeInfo")
@@ -64,7 +59,7 @@ public class SettingsController {
 
         if (bindingResult.hasErrors()) {
             handleBindingErrors(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
-            return REDIRECT_SETTINGS;
+            return "redirect:/settings";
         }
 
         String oldEmail = principal.getName();
@@ -74,7 +69,7 @@ public class SettingsController {
             updateSecurityContext(changeProfileDto.getEmail());
         }
 
-        return REDIRECT_SETTINGS + "?" + PARAM_SUCCESS;
+        return "redirect:/settings?success=true";
     }
 
     @PostMapping("/changeUserPassword")
@@ -84,13 +79,13 @@ public class SettingsController {
                                      Principal principal) {
         if (bindingResult.hasErrors()) {
             handleBindingErrors(redirectAttributes, ATTR_CHANGE_PASSWORD, changeUserPasswordDto, bindingResult, ATTR_INVALID_PASSWORD);
-            return REDIRECT_SETTINGS;
+            return "redirect:/settings";
         }
 
         userService.changeUserPassword(changeUserPasswordDto, principal.getName());
         updateSecurityContext(principal.getName());
 
-        return REDIRECT_SETTINGS + "?" + PARAM_PW_SUCCESS;
+        return "redirect:/settings?pwSuccess=true";
     }
 
     @DeleteMapping()
@@ -101,7 +96,7 @@ public class SettingsController {
         if (auth != null) {
             new SecurityContextLogoutHandler().logout(request, response, auth);
         }
-        return REDIRECT_HOME_DEACTIVATED;
+        return "redirect:/?deactivated=true";
     }
 
     private void ensureDefaultAttributes(Model model) {

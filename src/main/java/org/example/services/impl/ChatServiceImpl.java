@@ -35,7 +35,6 @@ import static org.example.services.impl.UserServiceImpl.ERR_USER_NOT_FOUND;
 public class ChatServiceImpl implements ChatService {
     public static final String ERR_CHAT_NOT_FOUND = "Chat not found";
     public static final String ERR_ACCESS_DENIED = "You do not have access to this chat!";
-    private static final String CONTEXT_SEPARATOR = "\n---\n";
     private static final String PROMPT_TEMPLATE = "Context:\n%s\n\nQuestion: %s";
     private static final int DEFAULT_TOP_K = 5;
     private final ChatRepository chatRepository;
@@ -91,7 +90,7 @@ public class ChatServiceImpl implements ChatService {
 
         List<ChunkSearchResult> topResults = searchContext(chat.getDocument().getId(), content);
 
-        String contextText = TextUtils.joinChunkContents(topResults, CONTEXT_SEPARATOR);
+        String contextText = TextUtils.joinChunkContents(topResults, "\n---\n");
 
         String threadId = getOrInitThread(chat);
         String combinedPrompt = String.format(PROMPT_TEMPLATE, contextText, content);

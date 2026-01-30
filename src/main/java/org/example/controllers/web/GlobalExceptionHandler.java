@@ -7,7 +7,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    public static final String VIEW_ERROR = "error";
     public static final String ATTR_STATUS = "status";
     public static final String ATTR_ERROR = "error";
     public static final String ATTR_MESSAGE = "message";
@@ -19,7 +18,7 @@ public class GlobalExceptionHandler {
         model.addAttribute(ATTR_STATUS, ex.getStatusCode().value());
         model.addAttribute(ATTR_ERROR, ex.getStatusCode().toString());
         model.addAttribute(ATTR_MESSAGE, ex.getReason());
-        return VIEW_ERROR;
+        return "error";
     }
 
     @ExceptionHandler(Exception.class)
@@ -28,6 +27,6 @@ public class GlobalExceptionHandler {
         model.addAttribute(ATTR_ERROR, MSG_INTERNAL_SERVER_ERROR);
         model.addAttribute(ATTR_MESSAGE, MSG_UNEXPECTED_ERROR);
         ex.printStackTrace();
-        return VIEW_ERROR;
+        return "error";
     }
 }

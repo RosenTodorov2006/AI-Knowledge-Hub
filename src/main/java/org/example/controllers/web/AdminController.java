@@ -12,11 +12,9 @@ import java.security.Principal;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-    public static final String VIEW_ADMIN_MONITOR = "admin-monitor";
     public static final String ATTR_JOBS = "jobs";
     public static final String ATTR_STATS = "stats";
     public static final String ATTR_CURRENT_USER = "currentUser";
-
     private final AdminService adminService;
     private final UserService userService;
 
@@ -29,7 +27,7 @@ public class AdminController {
     public String adminMonitor(Model model, Principal principal) {
         populateMonitorModel(model, principal.getName());
 
-        return VIEW_ADMIN_MONITOR;
+        return "admin-monitor";
     }
 
     private void populateMonitorModel(Model model, String email) {

@@ -19,10 +19,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class UserController {
-    public static final String VIEW_REGISTER = "register";
-    public static final String VIEW_LOGIN = "login";
-    public static final String REDIRECT_REGISTER = "redirect:/register";
-    public static final String REDIRECT_LOGIN = "redirect:/login";
     public static final String ATTR_REGISTER = "registerSeedDto";
     public static final String ATTR_LOGIN = "loginSeedDto";
     public static final String ATTR_INVALID_DATA = "invalidData";
@@ -43,7 +39,7 @@ public class UserController {
         if (!model.containsAttribute(ATTR_REGISTER)) {
             model.addAttribute(ATTR_REGISTER, new RegisterSeedDto());
         }
-        return VIEW_REGISTER;
+        return "register";
     }
 
     @PostMapping("/register")
@@ -53,11 +49,11 @@ public class UserController {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute(BINDING_RESULT_PREFIX + ATTR_REGISTER, bindingResult);
             redirectAttributes.addFlashAttribute(ATTR_REGISTER, registerSeedDto);
-            return REDIRECT_REGISTER;
+            return "redirect:/register";
         }
 
         this.userService.register(registerSeedDto);
-        return REDIRECT_LOGIN;
+        return "redirect:/login";
     }
 
     @GetMapping("/login")
@@ -66,7 +62,7 @@ public class UserController {
             model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
         }
         model.addAttribute(ATTR_INVALID_DATA, false);
-        return VIEW_LOGIN;
+        return "login";
     }
 
     @GetMapping("/login-error")
@@ -75,7 +71,7 @@ public class UserController {
         model.addAttribute(ATTR_ERROR_MSG, getErrorMessage(request));
         model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
 
-        return VIEW_LOGIN;
+        return "login";
     }
     private String getErrorMessage(HttpServletRequest request) {
         HttpSession session = request.getSession(false);

@@ -15,11 +15,6 @@ import java.security.Principal;
 
 @Controller
 public class ChatController {
-
-    public static final String VIEW_DASHBOARD = "dashboard";
-    public static final String VIEW_CHAT = "chat";
-    public static final String REDIRECT_DASHBOARD = "redirect:/dashboard";
-    public static final String REDIRECT_CHAT = "redirect:/chat";
     public static final String SESSION_CHAT_ID = "currentChatId";
     public static final String ATTR_ALL_CHATS = "allChats";
     public static final String ATTR_CURRENT_USER = "currentUser";
@@ -45,12 +40,12 @@ public class ChatController {
         String email = principal.getName();
         model.addAttribute(ATTR_ALL_CHATS, dashboardService.getAllChats(email));
         model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
-        return VIEW_DASHBOARD;
+        return "dashboard";
     }
     @GetMapping("/chats/select/{id}")
     public String selectChat(@PathVariable Long id, HttpSession session) {
         session.setAttribute(SESSION_CHAT_ID, id);
-        return REDIRECT_CHAT;
+        return "redirect:/chat";
     }
 
     @GetMapping("/chat")
@@ -58,11 +53,11 @@ public class ChatController {
         Long id = (Long) session.getAttribute(SESSION_CHAT_ID);
 
         if (id == null) {
-            return REDIRECT_DASHBOARD;
+            return "redirect:/dashboard";
         }
 
         model.addAttribute(ATTR_CHAT, chatService.getChatDetails(id, principal.getName()));
-        return VIEW_CHAT;
+        return "chat";
     }
 
     @PostMapping("/chats/create")
@@ -72,16 +67,16 @@ public class ChatController {
                                     RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_EMPTY_FILE);
-            return REDIRECT_DASHBOARD;
+            return "redirect:/dashboard";
         }
 
         try {
             ChatViewDto newChatDto = chatService.startNewChat(file, principal.getName());
             session.setAttribute(SESSION_CHAT_ID, newChatDto.getId());
-            return REDIRECT_CHAT;
+            return "redirect:/chat";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_PROCESS_PREFIX + e.getMessage());
-            return REDIRECT_DASHBOARD;
+            return "redirect:/dashboard";
         }
     }
 
@@ -91,14 +86,14 @@ public class ChatController {
         Long id = (Long) session.getAttribute(SESSION_CHAT_ID);
 
         if (id == null || content == null || content.trim().isEmpty()) {
-            return REDIRECT_CHAT;
+            return "redirect:/chat";
         }
 
         try {
             chatService.generateResponse(id, content);
-            return REDIRECT_CHAT + ANCHOR_BOTTOM;
+            return "redirect:/chat" + ANCHOR_BOTTOM;
         } catch (Exception e) {
-            return REDIRECT_CHAT + "?" + PARAM_ERROR_TRUE;
+            return "redirect:/chat" + "?" + PARAM_ERROR_TRUE;
         }
     }
 }

@@ -10,16 +10,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Controller
 public class PublicHomeController {
-    public static final String VIEW_INDEX = "index";
-    public static final String REDIRECT_DASHBOARD = "redirect:/dashboard";
-
     @GetMapping("/")
     public String index(Authentication authentication) {
         if (isFullyAuthenticated(authentication)) {
-            return REDIRECT_DASHBOARD;
+            return "redirect:/dashboard";
         }
 
-        return VIEW_INDEX;
+        return "index";
     }
     private boolean isFullyAuthenticated(Authentication authentication) {
         return authentication != null &&
