@@ -10,6 +10,8 @@ import org.example.repositories.ChunkSearchResult;
 import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.MessageContextSourceRepository;
 import org.example.repositories.MessageRepository;
+import org.example.services.DocumentProcessingService;
+import org.example.services.MessageContextSourceService;
 import org.example.services.MessageService;
 import org.springframework.stereotype.Service;
 
@@ -19,36 +21,32 @@ import java.util.List;
 @Service
 public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
-    private final MessageContextSourceRepository messageContextSourceRepository;
-    private final DocumentChunkRepository documentChunkRepository;
+    private final MessageContextSourceService messageContextSourceService;
 
-    public MessageServiceImpl(MessageRepository messageRepository,
-                              MessageContextSourceRepository messageContextSourceRepository, DocumentChunkRepository documentChunkRepository) {
+    public MessageServiceImpl(MessageRepository messageRepository, MessageContextSourceService messageContextSourceService) {
         this.messageRepository = messageRepository;
-        this.messageContextSourceRepository = messageContextSourceRepository;
-        this.documentChunkRepository = documentChunkRepository;
+        this.messageContextSourceService = messageContextSourceService;
     }
 
     @Override
     @Transactional
     public Message saveMessage(Chat chat, String content, MessageRole role) {
-        Message message = new Message();
-        message.setChat(chat);
-        message.setContent(content);
-        message.setRole(role);
-        message.setCreatedAt(LocalDateTime.now());
+        Message message = createMessage(chat, content, role);
         return messageRepository.save(message);
     }
 
     @Override
     @Transactional
     public void saveMessageSources(Message message, List<ChunkSearchResult> searchResults) {
-        for (ChunkSearchResult res : searchResults) {
-            MessageContextSource source = new MessageContextSource();
-            source.setMessage(message);
-            source.setChunk(documentChunkRepository.getReferenceById(res.getId()));
-            source.setScore(res.getSimilarity());
-            messageContextSourceRepository.save(source);
-        }
+        searchResults.forEach(res -> messageContextSourceService.saveSource(message, res));
+    }
+
+    private Message createMessage(Chat chat, String content, MessageRole role) {
+        Message message = new Message();
+        message.setChat(chat);
+        message.setContent(content);
+        message.setRole(role);
+        message.setCreatedAt(LocalDateTime.now());
+        return message;
     }
 }

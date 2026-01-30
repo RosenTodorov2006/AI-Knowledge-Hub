@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
+    public static final String ROLE_PREFIX = "ROLE_";
+    public static final String ERR_INVALID_EMAIL = "Invalid email";
+
     private final UserRepository userRepository;
 
     public UserDetailsServiceImpl(UserRepository userRepository) {
@@ -21,10 +24,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return this.userRepository.findByEmail(email)
-                .map(UserDetailsServiceImpl::map)
-                .orElseThrow(()->new UsernameNotFoundException("Invalid email"));
+                .map(UserDetailsServiceImpl::mapToUserDetails)
+                .orElseThrow(() -> new UsernameNotFoundException(ERR_INVALID_EMAIL));
     }
-    private static UserDetails map(UserEntity user) {
+
+    private static UserDetails mapToUserDetails(UserEntity user) {
         return User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
@@ -32,7 +36,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .disabled(!user.isActive())
                 .build();
     }
+
     private static List<SimpleGrantedAuthority> getAllRoles(UserEntity user) {
-        return List.of(new SimpleGrantedAuthority("ROLE_"+user.getRole().name()));
+        return List.of(new SimpleGrantedAuthority(ROLE_PREFIX + user.getRole().name()));
     }
 }

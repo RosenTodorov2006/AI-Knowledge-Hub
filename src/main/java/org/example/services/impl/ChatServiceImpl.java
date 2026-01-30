@@ -1,6 +1,7 @@
 package org.example.services.impl;
 
 import jakarta.transaction.Transactional;
+import org.example.clients.OpenAiClient;
 import org.example.models.dtos.exportDtos.ChatResponseDto;
 import org.example.models.dtos.exportDtos.ChatViewDto;
 import org.example.models.dtos.exportDtos.MessageResponseDto;
@@ -9,16 +10,13 @@ import org.example.models.entities.enums.DocumentStatus;
 import org.example.models.entities.enums.MessageRole;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.repositories.*;
-import org.example.services.ChatService;
-import org.example.services.DocumentProcessingService;
-import org.example.services.MessageService;
-import org.springframework.ai.chat.model.ChatModel;
+import org.example.services.*;
+import org.example.utils.TextUtils;
+import org.example.utils.VectorUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -28,221 +26,196 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.example.services.impl.UserServiceImpl.ERR_USER_NOT_FOUND;
 
 @Service
 public class ChatServiceImpl implements ChatService {
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final UserRepository userRepository;
-    private final DocumentRepository documentRepository;
+    public static final String ERR_CHAT_NOT_FOUND = "Chat not found";
+    public static final String ERR_ACCESS_DENIED = "You do not have access to this chat!";
+    private static final String PROMPT_TEMPLATE = "Context:\n%s\n\nQuestion: %s";
+    private static final int DEFAULT_TOP_K = 5;
     private final ChatRepository chatRepository;
-    private final ProcessingJobRepository processingJobRepository;
     private final DocumentProcessingService documentProcessingService;
     private final MessageService messageService;
     private final EmbeddingModel embeddingModel;
-    private final DocumentChunkRepository documentChunkRepository;
-    private final ChatModel chatModel;
+    private final ModelMapper modelMapper;
+    private final UserService userService;
+    private final ProcessingJobService processingJobService;
+    private final DocumentService documentService;
+    private final OpenAiClient openAiClient;
 
-    private final String assistantId = "asst_aAiBqIjw5EolrhSfnQSZAdwL";
-
-    @Value("${spring.ai.openai.api-key}")
-    private String apiKey;
-
-    public ChatServiceImpl(UserRepository userRepository, DocumentRepository documentRepository, ChatRepository chatRepository, ProcessingJobRepository processingJobRepository, DocumentProcessingService documentProcessingService, MessageService messageService, EmbeddingModel embeddingModel, DocumentChunkRepository documentChunkRepository, ChatModel chatModel) {
-        this.userRepository = userRepository;
-        this.documentRepository = documentRepository;
+    public ChatServiceImpl(ChatRepository chatRepository,
+                           DocumentProcessingService documentProcessingService,
+                           MessageService messageService,
+                           EmbeddingModel embeddingModel,
+                           ModelMapper modelMapper,
+                           UserService userService,
+                           ProcessingJobService processingJobService,
+                           DocumentService documentService,
+                           OpenAiClient openAiClient) {
         this.chatRepository = chatRepository;
-        this.processingJobRepository = processingJobRepository;
         this.documentProcessingService = documentProcessingService;
         this.messageService = messageService;
         this.embeddingModel = embeddingModel;
-        this.documentChunkRepository = documentChunkRepository;
-        this.chatModel = chatModel;
+        this.modelMapper = modelMapper;
+        this.userService = userService;
+        this.processingJobService = processingJobService;
+        this.documentService = documentService;
+        this.openAiClient = openAiClient;
     }
 
     @Override
     @Transactional
     public ChatViewDto startNewChat(MultipartFile file, String userEmail) throws IOException {
-        UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found!"));
+        UserEntity user = userService.findUserByEmail(userEmail);
+        Document document = documentService.saveDocument(file);
+        processingJobService.createProcessingJob(document);
+        Chat chat = saveNewChat(user, document);
 
-        Document document = new Document();
-        document.setFilename(file.getOriginalFilename());
-        document.setMimeType(file.getContentType());
-        document.setDocumentStatus(DocumentStatus.UPLOADED);
-        document.setUploadedAt(LocalDateTime.now());
-        document.setContent(file.getBytes());
-        document = documentRepository.save(document);
+        triggerAsyncProcessing(document.getId());
 
-        ProcessingJob job = new ProcessingJob();
-        job.setDocument(document);
-        job.setStage(ProcessingJobStage.UPLOADED);
-        processingJobRepository.save(job);
-
-        Chat chat = new Chat();
-        chat.setTitle("Chat regarding: " + file.getOriginalFilename());
-        chat.setUser(user);
-        chat.setDocument(document);
-        chat.setLastMessageAt(LocalDateTime.now());
-        chat = chatRepository.save(chat);
-
-        ChatViewDto chatViewDto = new ChatViewDto();
-        chatViewDto.setId(chat.getId());
-        chatViewDto.setTitle(chat.getTitle());
-        chatViewDto.setDocumentFilename(document.getFilename());
-        chatViewDto.setLastMessageAt(chat.getLastMessageAt());
-
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
-            Document finalDocument = document;
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    documentProcessingService.processDocument(finalDocument.getId());
-                }
-            });
-        } else {
-            documentProcessingService.processDocument(document.getId());
-        }
-
-        return chatViewDto;
+        return mapToChatViewDto(chat);
     }
 
     @Override
     @Transactional
     public ChatResponseDto generateResponse(Long chatId, String content) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
+                .orElseThrow(() -> new RuntimeException(ERR_CHAT_NOT_FOUND));
 
         messageService.saveMessage(chat, content, MessageRole.USER);
 
-        float[] queryVector = convertToFloatArray(embeddingModel.embed(content));
-        List<ChunkSearchResult> topResults = documentChunkRepository.findTopSimilar(
-                chat.getDocument().getId(), queryVector, 5);
+        List<ChunkSearchResult> topResults = searchContext(chat.getDocument().getId(), content);
 
-        String contextText = topResults.stream()
-                .map(ChunkSearchResult::getContent)
-                .collect(Collectors.joining("\n---\n"));
+        String contextText = TextUtils.joinChunkContents(topResults, "\n---\n");
 
-        if (chat.getOpenAiThreadId() == null) {
-            chat.setOpenAiThreadId(createThread());
-            chatRepository.save(chat);
-        }
+        String threadId = getOrInitThread(chat);
+        String combinedPrompt = String.format(PROMPT_TEMPLATE, contextText, content);
+        String aiResponse = openAiClient.askAssistant(threadId, combinedPrompt);
 
-        String combinedMessage = "Context:\n" + contextText + "\n\nQuestion: " + content;
-        addMessageToThread(chat.getOpenAiThreadId(), combinedMessage);
-
-        String runId = createRun(chat.getOpenAiThreadId());
-        waitForRunCompletion(chat.getOpenAiThreadId(), runId);
-        String aiAnswer = getLastAssistantMessage(chat.getOpenAiThreadId());
-
-        Message aiMessage = messageService.saveMessage(chat, aiAnswer, MessageRole.ASSISTANT);
-
+        Message aiMessage = messageService.saveMessage(chat, aiResponse, MessageRole.ASSISTANT);
         messageService.saveMessageSources(aiMessage, topResults);
 
-        return new ChatResponseDto(aiAnswer, aiMessage.getId());
+        return new ChatResponseDto(aiResponse, aiMessage.getId());
     }
 
-    private String createThread() {
-        HttpEntity<String> entity = new HttpEntity<>("{}", getHeaders());
-        Map<String, Object> response = restTemplate.postForObject("https://api.openai.com/v1/threads", entity, Map.class);
-        return (String) response.get("id");
-    }
-
-    private HttpHeaders getHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + apiKey);
-        headers.set("Content-Type", "application/json");
-        headers.set("OpenAI-Beta", "assistants=v2");
-        return headers;
-    }
-
-    private void addMessageToThread(String threadId, String content) {
-        Map<String, String> body = Map.of("role", "user", "content", content);
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, getHeaders());
-        restTemplate.postForObject("https://api.openai.com/v1/threads/" + threadId + "/messages", entity, Map.class);
-    }
-
-    private String createRun(String threadId) {
-        Map<String, String> body = Map.of("assistant_id", assistantId);
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, getHeaders());
-        Map<String, Object> response = restTemplate.postForObject("https://api.openai.com/v1/threads/" + threadId + "/runs", entity, Map.class);
-        return (String) response.get("id");
-    }
-
-    private void waitForRunCompletion(String threadId, String runId) {
-        String status = "";
-        while (!status.equals("completed")) {
-            try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
-            HttpEntity<String> entity = new HttpEntity<>(getHeaders());
-            Map<String, Object> response = restTemplate.exchange(
-                    "https://api.openai.com/v1/threads/" + threadId + "/runs/" + runId,
-                    HttpMethod.GET, entity, Map.class).getBody();
-            status = (String) response.get("status");
-            if (status.equals("failed")) throw new RuntimeException("Assistant run failed");
-        }
-    }
-
-    private String getLastAssistantMessage(String threadId) {
-        HttpEntity<String> entity = new HttpEntity<>(getHeaders());
-        Map<String, Object> response = restTemplate.exchange(
-                "https://api.openai.com/v1/threads/" + threadId + "/messages",
-                HttpMethod.GET, entity, Map.class).getBody();
-
-        List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-        Map<String, Object> lastMsg = data.get(0);
-        List<Map<String, Object>> contentList = (List<Map<String, Object>>) lastMsg.get("content");
-        Map<String, Object> textObj = (Map<String, Object>) contentList.get(0).get("text");
-        return (String) textObj.get("value");
-    }
-
-    private float[] convertToFloatArray(List<Double> doubles) {
-        float[] floats = new float[doubles.size()];
-        for (int i = 0; i < doubles.size(); i++) floats[i] = doubles.get(i).floatValue();
-        return floats;
+    @Override
+    public String findUserEmailByDocument(Document document) {
+        return chatRepository.findByDocument(document)
+                .map(chat -> chat.getUser().getEmail())
+                .orElse("System/Unknown");
     }
 
     @Override
     public ChatViewDto getChatDetails(Long id, String gmail) {
         Chat chat = chatRepository.findByIdAndUserEntityEmail(id, gmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this chat!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, ERR_ACCESS_DENIED));
 
-        ChatViewDto dto = new ChatViewDto();
-        dto.setId(chat.getId());
-        dto.setTitle(chat.getTitle());
+        ChatViewDto dto = modelMapper.map(chat, ChatViewDto.class);
         dto.setDocumentFilename(chat.getDocument().getFilename());
         dto.setDocumentId(chat.getDocument().getId());
+        dto.setStage(resolveProcessingStage(chat));
 
-        dto.setStage(chat.getDocument().getProcessingJob() != null ?
-                chat.getDocument().getProcessingJob().getStage() : ProcessingJobStage.UPLOADED);
+        List<MessageResponseDto> messages = mapMessages(chat.getMessages());
+        dto.setMessages(messages);
+        dto.setLastMessageAt(determineLastMessageDate(messages));
 
-        List<MessageResponseDto> messageDtos = chat.getMessages().stream()
-                .map(m -> {
-                    List<String> sourceTexts = Collections.emptyList();
+        return dto;
+    }
 
-                    if (m.getRole() == MessageRole.ASSISTANT && m.getContextSources() != null) {
-                        sourceTexts = m.getContextSources().stream()
-                                .map(source -> source.getChunk().getContent())
-                                .collect(Collectors.toList());
-                    }
+    @Override
+    public List<Chat> findAllChatsByUserEntityId(long userId) {
+        return chatRepository.findAllByUserEntityId(userId);
+    }
 
-                    return new MessageResponseDto(
-                            m.getContent(),
-                            m.getRole().name(),
-                            m.getCreatedAt(),
-                            sourceTexts
-                    );
-                })
-                .sorted(Comparator.comparing(MessageResponseDto::getCreatedAt))
-                .collect(Collectors.toList());
 
-        dto.setMessages(messageDtos);
-        if (!messageDtos.isEmpty()) {
-            dto.setLastMessageAt(messageDtos.get(messageDtos.size() - 1).getCreatedAt());
+    private String getOrInitThread(Chat chat) {
+        if (chat.getOpenAiThreadId() == null) {
+            String threadId = openAiClient.createThread();
+            chat.setOpenAiThreadId(threadId);
+            chatRepository.save(chat);
+        }
+        return chat.getOpenAiThreadId();
+    }
+
+    private List<ChunkSearchResult> searchContext(Long documentId, String query) {
+        float[] queryVector = VectorUtils.toFloatArray(embeddingModel.embed(query));
+        return this.documentProcessingService.findTopSimilar(documentId, queryVector, DEFAULT_TOP_K);
+    }
+
+    private void triggerAsyncProcessing(Long documentId) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    documentProcessingService.processDocument(documentId);
+                }
+            });
+        } else {
+            documentProcessingService.processDocument(documentId);
+        }
+    }
+
+    private Chat saveNewChat(UserEntity user, Document document) {
+        Chat chat = new Chat(
+                document.getFilename(),
+                user,
+                document,
+                LocalDateTime.now()
+        );
+        return chatRepository.save(chat);
+    }
+
+    private ChatViewDto mapToChatViewDto(Chat chat) {
+        ChatViewDto dto = this.modelMapper.map(chat, ChatViewDto.class);
+        dto.setLastMessageAt(chat.getLastMessageAt());
+        if (chat.getDocument() != null) {
+            dto.setDocumentFilename(chat.getDocument().getFilename());
+            dto.setDocumentId(chat.getDocument().getId());
+            if (chat.getDocument().getProcessingJob() != null) {
+                dto.setStage(chat.getDocument().getProcessingJob().getStage());
+            } else {
+                dto.setStage(ProcessingJobStage.UPLOADED);
+            }
         }
         return dto;
+    }
+
+    private ProcessingJobStage resolveProcessingStage(Chat chat) {
+        ProcessingJob job = chat.getDocument().getProcessingJob();
+        return (job != null) ? job.getStage() : ProcessingJobStage.UPLOADED;
+    }
+
+    private List<MessageResponseDto> mapMessages(List<Message> messages) {
+        if (messages == null) return Collections.emptyList();
+        return messages.stream()
+                .map(this::toMessageResponseDto)
+                .sorted(Comparator.comparing(MessageResponseDto::getCreatedAt))
+                .collect(Collectors.toList());
+    }
+
+    private MessageResponseDto toMessageResponseDto(Message message) {
+        return new MessageResponseDto(
+                message.getContent(),
+                message.getRole().name(),
+                message.getCreatedAt(),
+                extractSourceTexts(message)
+        );
+    }
+
+    private List<String> extractSourceTexts(Message message) {
+        if (message.getRole() != MessageRole.ASSISTANT || message.getContextSources() == null) {
+            return Collections.emptyList();
+        }
+        return message.getContextSources().stream()
+                .map(source -> source.getChunk().getContent())
+                .collect(Collectors.toList());
+    }
+
+    private LocalDateTime determineLastMessageDate(List<MessageResponseDto> messages) {
+        return messages.isEmpty() ? null : messages.get(messages.size() - 1).getCreatedAt();
     }
 }

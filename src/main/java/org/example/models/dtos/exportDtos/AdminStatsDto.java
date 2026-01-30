@@ -11,6 +11,7 @@ public class AdminStatsDto {
         this.totalVectors = totalVectors;
     }
 
+
     public long getCurrentlyProcessing() {
         return currentlyProcessing;
     }

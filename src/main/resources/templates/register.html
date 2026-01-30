@@ -1,45 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - KnowledgeHub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Запазваме твоя оригинален CSS без промяна */
-        html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f2f5; font-family: 'Inter', sans-serif; }
-        .auth-wrapper { display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
-        .auth-card { border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-radius: 1.5rem; background: white; width: 100%; max-width: 1100px; max-height: 85vh; display: flex; overflow: hidden; }
-        .side-image-container { background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1000&auto=format&fit=crop'); background-size: cover; background-position: center; position: relative; min-height: 100%; }
-        .image-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 2rem; }
-        .form-side { padding: 2.5rem !important; display: flex; flex-direction: column; justify-content: center; }
-        .auth-header { margin-bottom: 1rem; }
-        .auth-title { font-size: 1.75rem; margin-bottom: 0; }
-        .form-group { margin-bottom: 0.6rem !important; }
-        .form-input { border: 1.5px solid #e9ecef; border-radius: 10px; padding: 0.5rem 0.5rem 0.5rem 2.8rem; font-size: 0.95rem; transition: all 0.2s; }
-        .input-icon { position: absolute; top: 50%; transform: translateY(-50%); left: 1rem; color: #adb5bd; }
-        .error-block { background: #dc3545; color: white; font-size: 0.7rem; padding: 1px 8px; border-radius: 4px; font-weight: 600; }
-        .is-invalid { border-color: #dc3545 !important; }
-        @media (max-width: 992px) { .auth-card { max-width: 500px; max-height: 95vh; } .side-image-container { display: none; } .form-side { padding: 2rem !important; } }
-    </style>
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/auth :: auth-head('Sign Up')}"></head>
+
 <body class="auth-page">
 
 <div class="auth-wrapper">
     <div class="card auth-card">
         <div class="row g-0 w-100">
-            <div class="col-lg-5 d-none d-lg-block side-image-container">
-                <div class="image-overlay text-white">
-                    <h3 class="fw-bold">AI Knowledge Hub</h3>
-                    <p class="small m-0">Intelligent document vectorization and search.</p>
-                </div>
-            </div>
+
+            <div th:replace="~{fragments/auth :: auth-sidebar('AI Knowledge Hub', 'Join the future of knowledge management.')}"></div>
 
             <div class="col-lg-7 col-12 form-side">
                 <div class="auth-header">
                     <h2 class="auth-title fw-bold">Create Account</h2>
-                    <p class="text-muted small">Join the future of knowledge management</p>
+                    <p class="text-muted small">Intelligent document vectorization and search</p>
                 </div>
 
                 <form class="auth-form" th:action="@{/register}" th:method="POST" th:object="${registerSeedDto}">
@@ -54,8 +29,8 @@
                             <small th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="error-block"></small>
                         </div>
                         <div class="input-wrapper position-relative">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            <input type="text" th:field="*{fullName}" th:errorclass="is-invalid" class="form-input w-100" placeholder="John Doe" required minlength="3" maxlength="20">
+                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <input type="text" th:field="*{fullName}" th:errorclass="is-invalid" class="form-input w-100" placeholder="John Doe" required>
                         </div>
                     </div>
 
@@ -65,8 +40,8 @@
                             <small th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="error-block"></small>
                         </div>
                         <div class="input-wrapper position-relative">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                            <input type="text" th:field="*{username}" th:errorclass="is-invalid" class="form-input w-100" placeholder="username" required minlength="3" maxlength="20">
+                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <input type="text" th:field="*{username}" th:errorclass="is-invalid" class="form-input w-100" placeholder="username" required>
                         </div>
                     </div>
 
@@ -76,7 +51,7 @@
                             <small th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-block"></small>
                         </div>
                         <div class="input-wrapper position-relative">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             <input type="email" th:field="*{email}" th:errorclass="is-invalid" class="form-input w-100" placeholder="your@email.com" required>
                         </div>
                     </div>
@@ -87,8 +62,8 @@
                             <small th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="error-block"></small>
                         </div>
                         <div class="input-wrapper position-relative">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <input type="password" th:field="*{password}" th:errorclass="is-invalid" class="form-input w-100" placeholder="••••••••" required minlength="3" maxlength="20">
+                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <input type="password" th:field="*{password}" th:errorclass="is-invalid" class="form-input w-100" placeholder="••••••••" required>
                         </div>
                     </div>
 
@@ -98,8 +73,8 @@
                             <small th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="error-block"></small>
                         </div>
                         <div class="input-wrapper position-relative">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <input type="password" th:field="*{confirmPassword}" th:errorclass="is-invalid" class="form-input w-100" placeholder="••••••••" required minlength="3" maxlength="20">
+                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <input type="password" th:field="*{confirmPassword}" th:errorclass="is-invalid" class="form-input w-100" placeholder="••••••••" required>
                         </div>
                     </div>
 
@@ -107,7 +82,7 @@
                 </form>
 
                 <div class="text-center mt-2">
-                    <p class="small text-muted mb-0">Already have an account? <a href="/login" class="text-dark fw-bold text-decoration-none">Login</a></p>
+                    <p class="small text-muted mb-0">Already have an account? <a th:href="@{/login}" class="text-dark fw-bold text-decoration-none">Login</a></p>
                 </div>
             </div>
         </div>

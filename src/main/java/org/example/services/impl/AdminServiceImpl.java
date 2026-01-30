@@ -11,6 +11,13 @@ import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.DocumentRepository;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.services.AdminService;
+import org.example.services.ChatService;
+import org.example.services.DocumentProcessingService;
+import org.example.services.ProcessingJobService;
+import org.example.utils.DateTimeUtils;
+import org.example.utils.FormatUtils;
+import org.example.utils.JobUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -20,78 +27,54 @@ import java.util.stream.Collectors;
 
 @Service
 public class AdminServiceImpl implements AdminService {
-    private final ProcessingJobRepository processingJobRepository;
-    private final ChatRepository chatRepository;
-    private final DocumentChunkRepository documentChunkRepository;
+    public static final String JOB_ID_PREFIX = "#JOB-";
 
-    public AdminServiceImpl(ProcessingJobRepository processingJobRepository,
-                            ChatRepository chatRepository, DocumentChunkRepository documentChunkRepository) {
-        this.processingJobRepository = processingJobRepository;
-        this.chatRepository = chatRepository;
-        this.documentChunkRepository = documentChunkRepository;
+    private final ModelMapper modelMapper;
+    private final ProcessingJobService processingJobService;
+    private final DocumentProcessingService documentProcessingService;
+    private final ChatService chatService;
+
+    public AdminServiceImpl(ModelMapper modelMapper,
+                            ProcessingJobService processingJobService,
+                            DocumentProcessingService documentProcessingService,
+                            ChatService chatService) {
+        this.modelMapper = modelMapper;
+        this.processingJobService = processingJobService;
+        this.documentProcessingService = documentProcessingService;
+        this.chatService = chatService;
     }
 
     @Override
     public List<ProcessingJobDto> getFailedJobs() {
-        List<ProcessingJob> failedJobs = processingJobRepository.findAllByStage(ProcessingJobStage.FAILED);
-
-        return failedJobs.stream().map(job -> {
-            ProcessingJobDto dto = new ProcessingJobDto();
-            dto.setJobId("#JOB-" + job.getId());
-            dto.setFileName(job.getDocument().getFilename());
-
-            String email = chatRepository.findByDocument(job.getDocument())
-                    .map(chat -> chat.getUserEntity().getEmail())
-                    .orElse("System / Orphaned");
-            dto.setUserEmail(email);
-
-            dto.setError(job.getErrorMessage());
-
-            dto.setTimeAgo(formatTimeAgo(job.getDocument().getUploadedAt()));
-
-            ProcessingJobStage currentStage = job.getStage();
-
-            dto.setExtractPassed(currentStage.ordinal() > ProcessingJobStage.PARSING.ordinal());
-
-            dto.setChunkPassed(currentStage.ordinal() > ProcessingJobStage.SPLIT.ordinal());
-
-            dto.setEmbedPassed(currentStage == ProcessingJobStage.INDEXING
-                    || currentStage == ProcessingJobStage.COMPLETED);
-
-            return dto;
-        }).collect(Collectors.toList());
+        return processingJobService.findAllFailedJobs()
+                .stream()
+                .map(this::convertToFailedJobDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public AdminStatsDto getSystemStats() {
-        long processing = processingJobRepository.countByStageNotAndErrorMessageIsNull(ProcessingJobStage.COMPLETED);
+        long processing = processingJobService.countRunningJobs();
+        long completed = processingJobService.countCompletedJobs();
+        long failed = processingJobService.countFailedJobs();
 
-        long completed = processingJobRepository.countByStage(ProcessingJobStage.COMPLETED);
-        long failed = processingJobRepository.countByErrorMessageIsNotNull();
-        double rate = (completed + failed == 0) ? 100.0 : ((double) completed / (completed + failed)) * 100;
+        double successRate = FormatUtils.calculateSuccessRate(completed, failed);
+        String formattedVectors = FormatUtils.formatVectorCount(documentProcessingService.getTotalVectorCount());
 
-        long vectorsCount = documentChunkRepository.count();
-        String formattedVectors = formatVectorCount(vectorsCount);
-
-        return new AdminStatsDto(
-                processing,
-                Math.round(rate * 10.0) / 10.0,
-                formattedVectors
-        );
+        return new AdminStatsDto(processing, successRate, formattedVectors);
     }
 
-    private String formatVectorCount(long count) {
-        if (count < 1000) return String.valueOf(count);
-        if (count < 1_000_000) return String.format("%.1fK", count / 1000.0);
-        return String.format("%.1fM", count / 1_000_000.0);
-    }
+    private ProcessingJobDto convertToFailedJobDto(ProcessingJob job) {
+        ProcessingJobDto dto = modelMapper.map(job, ProcessingJobDto.class);
 
-    private String formatTimeAgo(LocalDateTime dateTime) {
-        if (dateTime == null) return "n/a";
-        Duration d = Duration.between(dateTime, LocalDateTime.now());
-        if (d.getSeconds() < 60) return d.getSeconds() + "s ago";
-        if (d.toMinutes() < 60) return d.toMinutes() + "m ago";
-        if (d.toHours() < 24) return d.toHours() + "h ago";
-        return d.toDays() + "d ago";
+        dto.setJobId(JOB_ID_PREFIX + job.getId());
+        dto.setFileName(job.getDocument().getFilename());
+        dto.setUserEmail(chatService.findUserEmailByDocument(job.getDocument()));
+
+        dto.setTimeAgo(DateTimeUtils.formatTimeAgo(job.getDocument().getUploadedAt()));
+
+        JobUtils.enrichStageFlags(dto, job.getStage());
+
+        return dto;
     }
 }

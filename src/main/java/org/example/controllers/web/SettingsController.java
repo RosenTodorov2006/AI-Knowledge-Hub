@@ -1,4 +1,4 @@
-package org.example.web;
+package org.example.controllers.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +24,13 @@ import java.security.Principal;
 @Controller
 @RequestMapping("/settings")
 public class SettingsController {
+    public static final String ATTR_CHANGE_PROFILE = "changeProfileDto";
+    public static final String ATTR_CHANGE_PASSWORD = "changeUserPasswordDto";
+    public static final String ATTR_INVALID_PROFILE = "invalidProfileInfoData";
+    public static final String ATTR_INVALID_PASSWORD = "invalidUserPasswordData";
+    public static final String ATTR_CURRENT_USER = "currentUser";
+    public static final String BINDING_RESULT_PREFIX = "org.springframework.validation.BindingResult.";
+
     private final UserService userService;
 
     public SettingsController(UserService userService) {
@@ -31,27 +38,19 @@ public class SettingsController {
     }
 
     @GetMapping()
-    public String settings(Model model, Principal principal){
-        if (!model.containsAttribute("changeProfileDto")) {
-            UserViewDto userViewByEmail = userService.getUserViewByEmail(principal.getName());
-            ChangeProfileDto dto = new ChangeProfileDto();
-            dto.setEmail(userViewByEmail.getEmail());
-            dto.setFullName(userViewByEmail.getFullName());
-            model.addAttribute("changeProfileDto", dto);
+    public String settings(Model model, Principal principal) {
+        String email = principal.getName();
+
+        if (!model.containsAttribute(ATTR_CHANGE_PROFILE)) {
+            model.addAttribute(ATTR_CHANGE_PROFILE, userService.getChangeProfileDto(email));
         }
-        if (!model.containsAttribute("changeUserPasswordDto")) {
-            model.addAttribute("changeUserPasswordDto", new ChangeUserPasswordDto());
-        }
-        if (!model.containsAttribute("invalidProfileInfoData")) {
-            model.addAttribute("invalidProfileInfoData", false);
-        }
-        if (!model.containsAttribute("invalidUserPasswordData")) {
-            model.addAttribute("invalidUserPasswordData", false);
-        }
-        UserViewDto currentUser = this.userService.getUserViewByEmail(principal.getName());
-        model.addAttribute("currentUser", currentUser);
+
+        ensureDefaultAttributes(model);
+        model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
+
         return "settings";
     }
+
     @PostMapping("/changeInfo")
     public String changeInfo(@Valid ChangeProfileDto changeProfileDto,
                              BindingResult bindingResult,
@@ -59,10 +58,7 @@ public class SettingsController {
                              Principal principal) {
 
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.changeProfileDto", bindingResult);
-            redirectAttributes.addFlashAttribute("changeProfileDto", changeProfileDto);
-            redirectAttributes.addFlashAttribute("invalidProfileInfoData", true);
-
+            handleBindingErrors(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
             return "redirect:/settings";
         }
 
@@ -76,40 +72,55 @@ public class SettingsController {
         return "redirect:/settings?success=true";
     }
 
-    private void updateSecurityContext(String newEmail) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Authentication newAuth = new UsernamePasswordAuthenticationToken(
-                newEmail,
-                auth.getCredentials(),
-                auth.getAuthorities()
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(newAuth);
-    }
     @PostMapping("/changeUserPassword")
     public String changeUserPassword(@Valid ChangeUserPasswordDto changeUserPasswordDto,
                                      BindingResult bindingResult,
                                      RedirectAttributes redirectAttributes,
                                      Principal principal) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.changeUserPasswordDto", bindingResult);
-            redirectAttributes.addFlashAttribute("changeUserPasswordDto", changeUserPasswordDto);
-            redirectAttributes.addFlashAttribute("invalidUserPasswordData", true);
+            handleBindingErrors(redirectAttributes, ATTR_CHANGE_PASSWORD, changeUserPasswordDto, bindingResult, ATTR_INVALID_PASSWORD);
             return "redirect:/settings";
         }
-        userService.changeUserPassword(changeUserPasswordDto, principal.getName());
 
+        userService.changeUserPassword(changeUserPasswordDto, principal.getName());
         updateSecurityContext(principal.getName());
 
         return "redirect:/settings?pwSuccess=true";
     }
+
     @DeleteMapping()
     public String disableAccount(Principal principal, HttpServletRequest request, HttpServletResponse response) {
         userService.deleteUser(principal.getName());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         if (auth != null) {
             new SecurityContextLogoutHandler().logout(request, response, auth);
         }
         return "redirect:/?deactivated=true";
+    }
+
+    private void ensureDefaultAttributes(Model model) {
+        if (!model.containsAttribute(ATTR_CHANGE_PASSWORD)) {
+            model.addAttribute(ATTR_CHANGE_PASSWORD, new ChangeUserPasswordDto());
+        }
+        if (!model.containsAttribute(ATTR_INVALID_PROFILE)) {
+            model.addAttribute(ATTR_INVALID_PROFILE, false);
+        }
+        if (!model.containsAttribute(ATTR_INVALID_PASSWORD)) {
+            model.addAttribute(ATTR_INVALID_PASSWORD, false);
+        }
+    }
+
+    private void handleBindingErrors(RedirectAttributes ra, String attrName, Object dto, BindingResult br, String errorFlag) {
+        ra.addFlashAttribute(BINDING_RESULT_PREFIX + attrName, br);
+        ra.addFlashAttribute(attrName, dto);
+        ra.addFlashAttribute(errorFlag, true);
+    }
+
+    private void updateSecurityContext(String newEmail) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(newEmail, auth.getCredentials(), auth.getAuthorities())
+        );
     }
 }

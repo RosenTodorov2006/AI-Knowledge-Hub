@@ -1,4 +1,4 @@
-package org.example.web;
+package org.example.controllers.web;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,12 +12,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicHomeController {
     @GetMapping("/")
     public String index(Authentication authentication) {
-        if (authentication != null &&
-                authentication.isAuthenticated() &&
-                !(authentication instanceof AnonymousAuthenticationToken)) {
-
+        if (isFullyAuthenticated(authentication)) {
             return "redirect:/dashboard";
         }
+
         return "index";
+    }
+    private boolean isFullyAuthenticated(Authentication authentication) {
+        return authentication != null &&
+                authentication.isAuthenticated() &&
+                !(authentication instanceof AnonymousAuthenticationToken);
     }
 }
