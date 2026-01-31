@@ -3,12 +3,12 @@
 
         <form th:action="@{/chats/create}" method="POST" enctype="multipart/form-data" id="uploadForm">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0;">Start a New Chat</h2>
+                <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0;" th:text="#{modal.upload.title}">Start a New Chat</h2>
                 <button type="button" id="closeModalX" style="background: none; border: none; cursor: pointer; color: #9CA3AF; padding: 4px;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
             </div>
-            <p style="color: #6B7280; font-size: 14px; margin-bottom: 24px;">Upload a document to begin chatting</p>
+            <p style="color: #6B7280; font-size: 14px; margin-bottom: 24px;" th:text="#{modal.upload.subtitle}">Upload a document to begin chatting</p>
 
             <input type="file" id="realFileInput" name="file" style="display: none;" accept=".pdf,.docx,.ppt,.pptx">
 
@@ -16,25 +16,32 @@
                 <div style="background: #EEF2FF; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                 </div>
-                <p id="fileNameDisplay" style="font-size: 14px; color: #374151; font-weight: 500; margin-bottom: 4px;">Drag & drop your PDF, DOCX, or PPT here</p>
-                <p id="browseLink" style="font-size: 14px; color: #6B7280;">or <span style="color: #5D5DFE; text-decoration: underline;">browse files</span></p>
+                <p id="fileNameDisplay" style="font-size: 14px; color: #374151; font-weight: 500; margin-bottom: 4px;" th:text="#{modal.upload.dropzone}">Drag & drop your PDF, DOCX, or PPT here</p>
+                <p id="browseLink" style="font-size: 14px; color: #6B7280;">
+                    <span th:text="#{modal.upload.or}">or</span>
+                    <span style="color: #5D5DFE; text-decoration: underline;" th:text="#{modal.upload.browse}">browse files</span>
+                </p>
             </div>
 
             <div style="background: #F3F4FF; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; border-left: 4px solid #5D5DFE;">
                 <p style="font-size: 12px; color: #4F46E5; margin: 0; line-height: 1.5;">
-                    <strong>Note:</strong> One file per chat session.
+                    <strong th:text="#{modal.upload.note}">Note:</strong> <span th:text="#{modal.upload.note.desc}">One file per chat session.</span>
                 </p>
             </div>
 
             <div style="display: flex; gap: 12px;">
-                <button type="button" id="cancelModalBtn" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background: white; color: #374151; font-weight: 600; cursor: pointer;">Cancel</button>
-                <button type="submit" id="analyzeBtn" style="flex: 2; padding: 12px; border-radius: 8px; border: none; background: #5D5DFE; color: white; font-weight: 600; cursor: pointer; opacity: 0.5;" disabled>Analyze & Start Chat</button>
+                <button type="button" id="cancelModalBtn" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background: white; color: #374151; font-weight: 600; cursor: pointer;" th:text="#{modal.upload.btn.cancel}">Cancel</button>
+                <button type="submit" id="analyzeBtn" style="flex: 2; padding: 12px; border-radius: 8px; border: none; background: #5D5DFE; color: white; font-weight: 600; cursor: pointer; opacity: 0.5;" th:text="#{modal.upload.btn.submit}" disabled>Analyze & Start Chat</button>
             </div>
         </form>
     </div>
 
     <script th:inline="javascript">
         (function() {
+            // Вземаме преводите от properties файловете
+            const dropzoneDefaultText = [[#{modal.upload.dropzone}]];
+            const selectedText = [[#{modal.upload.selected}]]; // Трябва да го добавиш в properties
+
             const modal = document.getElementById('uploadModal');
             const dropZone = document.getElementById('dropZone');
             const realFileInput = document.getElementById('realFileInput');
@@ -42,10 +49,11 @@
             const analyzeBtn = document.getElementById('analyzeBtn');
 
             window.showUploadModal = () => modal.style.display = 'flex';
+
             window.hideUploadModal = () => {
                 modal.style.display = 'none';
                 realFileInput.value = "";
-                fileNameDisplay.innerText = "Drag & drop your PDF, DOCX, or PPT here";
+                fileNameDisplay.innerText = dropzoneDefaultText;
                 fileNameDisplay.style.color = "#374151";
                 analyzeBtn.disabled = true;
                 analyzeBtn.style.opacity = "0.5";
@@ -60,12 +68,14 @@
             });
 
             function handleFileSelect(file) {
-                fileNameDisplay.innerText = "Selected: " + file.name;
+                fileNameDisplay.innerText = selectedText + " " + file.name;
                 fileNameDisplay.style.color = "#5D5DFE";
                 analyzeBtn.disabled = false;
                 analyzeBtn.style.opacity = "1";
+                analyzeBtn.style.cursor = "pointer";
             }
 
+            // Drag and Drop логика
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 dropZone.style.background = "#EEF2FF";

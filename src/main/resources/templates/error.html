@@ -47,17 +47,18 @@
         <h1 class="status-code" th:text="${status}">500</h1>
         <div class="error-type" th:text="${error}">Internal Server Error</div>
 
-        <p class="error-desc">
-            <span th:if="${status == 403}">Oops! It looks like you don't have permission to view this chat. KnowledgeHub security is our top priority! 🛡️</span>
+        <div class="error-desc">
+            <span th:if="${status == 403}" th:text="#{error.desc.403}">Oops! It looks like you don't have permission...</span>
 
-            <span th:if="${status == 404}">The page you are looking for has wandered off. Please double-check the URL.</span>
+            <span th:if="${status == 404}" th:text="#{error.desc.404}">The page you are looking for has wandered off...</span>
 
-            <span th:if="${status == 500}">Something went wrong on the server. AI must be overthinking everything! ⚡</span>
+            <span th:if="${status == 500}" th:text="#{error.desc.500}">Something went wrong on the server...</span>
             <br><br>
             <small th:text="${message}"></small>
-        </p>
+        </div>
 
-        <a th:href="@{/dashboard}" class="btn-primary" style="text-decoration: none; padding: 12px 24px; display: inline-block;">
+        <a th:href="@{/dashboard}" class="btn-primary" style="text-decoration: none; padding: 12px 24px; display: inline-block;"
+           th:text="#{error.button.back}">
             Back to Dashboard
         </a>
     </div>

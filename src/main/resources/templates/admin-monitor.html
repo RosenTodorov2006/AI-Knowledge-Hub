@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/head :: head('Admin Monitor', ~{::link})}">
+<head th:replace="~{fragments/head :: head(#{admin.monitor.page.title}, ~{::link})}">
     <link rel="stylesheet" th:href="@{/css/admin-monitor.css}">
 </head>
 
@@ -14,16 +14,16 @@
         <header class="admin-header">
             <div class="header-left">
                 <nav class="breadcrumb">
-                    <span>System Monitor</span>
+                    <span th:text="#{admin.monitor.breadcrumb.system}">System Monitor</span>
                     <span class="breadcrumb-separator">></span>
-                    <span>Document Processing Queue</span>
+                    <span th:text="#{admin.monitor.breadcrumb.queue}">Document Processing Queue</span>
                 </nav>
-                <h1 class="page-title">Processing Monitor</h1>
+                <h1 class="page-title" th:text="#{admin.monitor.title}">Processing Monitor</h1>
             </div>
             <div class="header-right">
                 <div class="status-badge operational">
                     <span class="status-dot"></span>
-                    <span>All Systems Operational</span>
+                    <span th:text="#{admin.monitor.status.operational}">All Systems Operational</span>
                 </div>
             </div>
         </header>
@@ -32,24 +32,24 @@
             <div class="stat-card stat-blue">
                 <div class="stat-content">
                     <div class="stat-value" th:text="${stats.currentlyProcessing}">5</div>
-                    <div class="stat-label">Currently Processing</div>
-                    <div class="stat-footer">Active indexing jobs</div>
+                    <div class="stat-label" th:text="#{admin.monitor.stats.processing.label}">Currently Processing</div>
+                    <div class="stat-footer" th:text="#{admin.monitor.stats.processing.footer}">Active indexing jobs</div>
                 </div>
             </div>
 
             <div class="stat-card stat-green">
                 <div class="stat-content">
                     <div class="stat-value" th:text="${stats.successRate + '%'}">98.4%</div>
-                    <div class="stat-label">Success Rate</div>
-                    <div class="stat-footer">Last 24 hours</div>
+                    <div class="stat-label" th:text="#{admin.monitor.stats.rate.label}">Success Rate</div>
+                    <div class="stat-footer" th:text="#{admin.monitor.stats.rate.footer}">Last 24 hours</div>
                 </div>
             </div>
 
             <div class="stat-card stat-orange">
                 <div class="stat-content">
                     <div class="stat-value" th:text="${stats.totalVectors}">1.2M</div>
-                    <div class="stat-label">Vectors Stored</div>
-                    <div class="stat-footer">Total embeddings</div>
+                    <div class="stat-label" th:text="#{admin.monitor.stats.vectors.label}">Vectors Stored</div>
+                    <div class="stat-footer" th:text="#{admin.monitor.stats.vectors.footer}">Total embeddings</div>
                 </div>
             </div>
         </div>
@@ -58,12 +58,12 @@
             <table class="processing-table">
                 <thead>
                 <tr>
-                    <th>JOB ID</th>
-                    <th>FILE NAME</th>
-                    <th>USER</th>
-                    <th>STAGE PROGRESS</th>
-                    <th>STATUS</th>
-                    <th>ERROR / TIME</th>
+                    <th th:text="#{admin.monitor.table.header.id}">JOB ID</th>
+                    <th th:text="#{admin.monitor.table.header.filename}">FILE NAME</th>
+                    <th th:text="#{admin.monitor.table.header.user}">USER</th>
+                    <th th:text="#{admin.monitor.table.header.progress}">STAGE PROGRESS</th>
+                    <th th:text="#{admin.monitor.table.header.status}">STATUS</th>
+                    <th th:text="#{admin.monitor.table.header.errortime}">ERROR / TIME</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -73,15 +73,21 @@
                     <td class="user-name" th:text="${job.userEmail}">user@example.com</td>
                     <td class="stage-progress">
                         <div class="stage-badges">
-                            <span class="stage-badge" th:classappend="${job.error == null ? 'completed' : 'failed'}">PROCESS</span>
+                            <span class="stage-badge"
+                                  th:classappend="${job.error == null ? 'completed' : 'failed'}"
+                                  th:text="#{admin.monitor.table.stage.process}">PROCESS</span>
                             <span class="stage-connector"></span>
-                            <span class="stage-badge" th:classappend="${job.error == null ? 'completed' : 'pending'}">EMBED</span>
+                            <span class="stage-badge"
+                                  th:classappend="${job.error == null ? 'completed' : 'pending'}"
+                                  th:text="#{admin.monitor.table.stage.embed}">EMBED</span>
                         </div>
                     </td>
                     <td>
                         <span class="status-pill"
                               th:classappend="${job.error == null ? 'status-success' : 'status-failed'}"
-                              th:text="${job.error == null ? 'Success' : 'Failed'}">Processing</span>
+                              th:text="${job.error == null} ? #{admin.monitor.table.status.success} : #{admin.monitor.table.status.failed}">
+                              Status
+                        </span>
                     </td>
                     <td class="error-time"
                         th:classappend="${job.error != null ? 'error-text' : ''}"
@@ -96,7 +102,6 @@
 </div>
 
 <button th:replace="~{fragments/layout :: mobile-toggle}"></button>
-
 <th:block th:replace="~{fragments/scripts :: common-scripts}"></th:block>
 
 </body>

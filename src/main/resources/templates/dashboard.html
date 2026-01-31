@@ -11,14 +11,14 @@
     <main class="main-content">
         <header class="content-header">
             <div class="header-left">
-                <h1 class="page-title">My Document Chats</h1>
-                <p class="page-subtitle" th:text="${allChats.size() + ' documents'}">0 documents</p>
+                <h1 class="page-title" th:text="#{dashboard.title}">My Document Chats</h1>
+                <p class="page-subtitle" th:text="#{dashboard.subtitle(${allChats.size()})}">0 documents</p>
             </div>
             <button class="upload-btn" onclick="showUploadModal()">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-                <span>Upload New File</span>
+                <span th:text="#{dashboard.button.upload}">Upload New File</span>
             </button>
         </header>
 
@@ -27,7 +27,7 @@
                 <path d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M10 14V10M10 6H10.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <p>One File = One Chat: Each document gets its own dedicated conversation. Click any card below to continue chatting with that specific file.</p>
+            <p th:text="#{dashboard.banner}">One File = One Chat: Each document gets its own dedicated conversation.</p>
         </div>
 
         <div class="documents-grid">
@@ -59,8 +59,8 @@
                     <svg class="plus-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M24 12V36M12 24H36" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round"/>
                     </svg>
-                    <p class="start-new-text">Start New Chat</p>
-                    <p class="start-new-subtext">Upload a document</p>
+                    <p class="start-new-text" th:text="#{dashboard.card.new.title}">Start New Chat</p>
+                    <p class="start-new-subtext" th:text="#{dashboard.card.new.subtitle}">Upload a document</p>
                 </div>
             </div>
         </div>

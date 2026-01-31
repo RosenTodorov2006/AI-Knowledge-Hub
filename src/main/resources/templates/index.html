@@ -1,23 +1,55 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/head :: head('Home', ~{::link})}">
+<head th:replace="~{fragments/head :: head(#{home.page.title}, ~{::link})}">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 
 <body>
-<nav th:replace="~{fragments/common :: public-nav}"></nav>
+
+<nav class="navbar" id="navbar" style="background: white; border-bottom: 1px solid #F3F4F6; padding: 16px 0;">
+    <div class="nav-container" style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+        <div class="nav-logo" style="display: flex; align-items: center; gap: 10px;">
+            <span class="logo-icon" style="background: #5D5DFE; color: white; padding: 5px 12px; border-radius: 8px; font-weight: bold;">K</span>
+            <span class="logo-text" style="font-weight: 700; font-size: 1.25rem; color: #111827;">KnowledgeHub</span>
+        </div>
+
+        <ul class="nav-links" style="display: flex; list-style: none; gap: 32px; margin: 0; padding: 0;">
+            <li><a href="#features" th:text="#{nav.features}" style="text-decoration: none; color: #4B5563; font-weight: 500;">Features</a></li>
+            <li><a href="#how-it-works" th:text="#{nav.how}" style="text-decoration: none; color: #4B5563; font-weight: 500;">How it Works</a></li>
+        </ul>
+
+        <div class="nav-auth" style="display: flex; align-items: center; gap: 24px;">
+            <div style="position: relative; cursor: pointer;" onclick="const d = this.querySelector('.dropdown-lang'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex';">
+                <div style="display: flex; align-items: center; gap: 6px; color: #374151; font-weight: 500; font-size: 14px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <span th:text="#{lang.select}">Language</span>
+                </div>
+                <div class="dropdown-lang" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #E5E7EB; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 12px; flex-direction: column; gap: 10px; min-width: 150px; z-index: 1000; margin-top: 10px;">
+                    <a th:href="@{/(lang='bg')}" style="text-decoration: none; color: #374151; font-size: 14px; display: flex; gap: 8px;"><span>🇧🇬</span> BG</a>
+                    <a th:href="@{/(lang='en')}" style="text-decoration: none; color: #374151; font-size: 14px; display: flex; gap: 8px;"><span>🇺🇸</span> EN</a>
+                    <a th:href="@{/(lang='de')}" style="text-decoration: none; color: #374151; font-size: 14px; display: flex; gap: 8px;"><span>🇩🇪</span> DE</a>
+                    <a th:href="@{/(lang='fr')}" style="text-decoration: none; color: #374151; font-size: 14px; display: flex; gap: 8px;"><span>🇫🇷</span> FR</a>
+                    <a th:href="@{/(lang='es')}" style="text-decoration: none; color: #374151; font-size: 14px; display: flex; gap: 8px;"><span>🇪🇸</span> ES</a>
+                </div>
+            </div>
+
+            <a th:href="@{/login}" class="auth-login" th:text="#{nav.login}" style="text-decoration: none; color: #374151; font-weight: 600;">Login</a>
+            <a th:href="@{/register}" class="auth-btn" th:text="#{nav.register}" style="text-decoration: none; background: #5D5DFE; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600;">Get Started</a>
+        </div>
+    </div>
+</nav>
 
 <section id="home" class="hero">
     <div class="hero-container">
         <div class="hero-content">
-            <h1 class="hero-title">Transform Your Documents Into Intelligent Conversations</h1>
-            <p class="hero-subtitle">Upload your documents and chat with them instantly. KnowledgeHub makes your files searchable and queryable.</p>
-            <a th:href="@{/login}" class="hero-btn">Start Your First Chat - Free</a>
+            <h1 class="hero-title" th:text="#{home.hero.title}">Transform Your Documents Into Intelligent Conversations</h1>
+            <p class="hero-subtitle" th:text="#{home.hero.subtitle}">Upload your documents and chat with them instantly. KnowledgeHub makes your files searchable and queryable.</p>
+            <a th:href="@{/login}" class="hero-btn" th:text="#{home.hero.cta}">Start Your First Chat - Free</a>
         </div>
         <div class="hero-image">
             <div class="document-showcase">
-                <img th:src="@{/img/img.png}" alt="KnowledgeHub" class="showcase-img">
+                <img th:src="@{/img/img.png}" th:alt="#{home.img.alt}" class="showcase-img">
             </div>
         </div>
     </div>
@@ -25,28 +57,28 @@
 
 <section id="features" class="features">
     <div class="container">
-        <h2 class="section-title">Why Choose KnowledgeHub</h2>
+        <h2 class="section-title" th:text="#{home.features.section-title}">Why Choose KnowledgeHub</h2>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M16 2L4 8V16C4 22.628 9.372 28 16 28C22.628 28 28 22.628 28 16V8L16 2Z"/><path d="M16 10V16L20 18"/></svg>
                 </div>
-                <h3 class="feature-title">Lightning Fast</h3>
-                <p class="feature-description">Get instant answers from your documents with our advanced AI-powered search technology.</p>
+                <h3 class="feature-title" th:text="#{home.features.fast.title}">Lightning Fast</h3>
+                <p class="feature-description" th:text="#{home.features.fast.desc}">Get instant answers from your documents with our advanced AI-powered search technology.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M16 4C10.477 4 6 8.477 6 14C6 19.523 10.477 24 16 24C21.523 24 26 19.523 26 14C26 8.477 21.523 4 16 4Z"/><path d="M16 8V14L20 16"/></svg>
                 </div>
-                <h3 class="feature-title">Secure & Private</h3>
-                <p class="feature-description">Your documents are encrypted and stored securely. Your data privacy is our top priority.</p>
+                <h3 class="feature-title" th:text="#{home.features.secure.title}">Secure & Private</h3>
+                <p class="feature-description" th:text="#{home.features.secure.desc}">Your documents are encrypted and stored securely. Your data privacy is our top priority.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#5D5DFE" stroke-width="2"><path d="M12 4H20C21.105 4 22 4.895 22 6V26C22 27.105 21.105 28 20 28H12C10.895 28 10 27.105 10 26V6C10 4.895 10.895 4 12 4Z"/><path d="M16 10V12"/></svg>
                 </div>
-                <h3 class="feature-title">Easy Integration</h3>
-                <p class="feature-description">Seamlessly integrate KnowledgeHub into your workflow with our simple API.</p>
+                <h3 class="feature-title" th:text="#{home.features.easy.title}">Easy Integration</h3>
+                <p class="feature-description" th:text="#{home.features.easy.desc}">Seamlessly integrate KnowledgeHub into your workflow with our simple API.</p>
             </div>
         </div>
     </div>
@@ -54,26 +86,26 @@
 
 <section id="how-it-works" class="how-it-works">
     <div class="container">
-        <h2 class="section-title">How it Works</h2>
+        <h2 class="section-title" th:text="#{home.how.section-title}">How it Works</h2>
         <div class="steps-grid">
             <div class="step-card">
                 <div class="step-number">1</div>
-                <h3 class="step-title">Upload Documents</h3>
-                <p class="step-description">Upload your PDFs or Word documents to your workspace.</p>
+                <h3 class="step-title" th:text="#{home.how.step1.title}">Upload Documents</h3>
+                <p class="step-description" th:text="#{home.how.step1.desc}">Upload your PDFs or Word documents to your workspace.</p>
             </div>
             <div class="step-card">
                 <div class="step-number">2</div>
-                <h3 class="step-title">AI Processing</h3>
-                <p class="step-description">Our AI analyzes your documents to make them queryable.</p>
+                <h3 class="step-title" th:text="#{home.how.step2.title}">AI Processing</h3>
+                <p class="step-description" th:text="#{home.how.step2.desc}">Our AI analyzes your documents to make them queryable.</p>
             </div>
             <div class="step-card">
                 <div class="step-number">3</div>
-                <h3 class="step-title">Chat & Query</h3>
-                <p class="step-description">Ask questions and get instant, accurate answers.</p>
+                <h3 class="step-title" th:text="#{home.how.step3.title}">Chat & Query</h3>
+                <p class="step-description" th:text="#{home.how.step3.desc}">Ask questions and get instant, accurate answers.</p>
             </div>
         </div>
         <div class="steps-cta">
-            <a th:href="@{/register}" class="try-btn">Try it Now</a>
+            <a th:href="@{/register}" class="try-btn" th:text="#{home.how.cta}">Try it Now</a>
         </div>
     </div>
 </section>

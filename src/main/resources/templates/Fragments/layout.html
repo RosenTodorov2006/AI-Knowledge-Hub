@@ -9,31 +9,66 @@
     </div>
 
     <nav class="sidebar-nav">
-        <a th:href="@{/dashboard}" class="nav-item"
-           th:classappend="${activePage == 'dashboard'} ? 'active' : ''">
+        <a th:href="@{/dashboard}" class="nav-item" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">
             <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 10L10 3L17 10M7 18V12H13V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>Dashboard</span>
+            <span th:text="#{sidebar.dashboard}">Dashboard</span>
         </a>
 
-        <a th:href="@{/admin/monitor}" class="nav-item"
-           th:classappend="${activePage == 'monitor'} ? 'active' : ''"
-           sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/admin/monitor}" class="nav-item" th:classappend="${activePage == 'monitor'} ? 'active' : ''" sec:authorize="hasRole('ADMIN')">
             <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 2L3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20H15C15.5304 20 16.0391 19.7893 16.4142 19.4142C16.7893 19.0391 17 18.5304 17 18V6L11 2M9 2H11M9 2V8H11V2M5 20V9H15V20"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 2L3 6V18C3 18.5304 3.21071 19.0391 3.58579 19.4142C3.96086 19.7893 4.46957 20 5 20H15C15.5304 20 16.0391 19.7893 16.4142 19.4142C16.7893 19.0391 17 18.5304 17 18V6L11 2M9 2H11M9 2V8H11V2M5 20V9H15V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>Admin Monitor</span>
+            <span th:text="#{sidebar.monitor}">Admin Monitor</span>
         </a>
 
-        <a th:href="@{/settings}" class="nav-item"
-           th:classappend="${activePage == 'settings'} ? 'active' : ''">
+        <a th:href="@{/settings}" class="nav-item" th:classappend="${activePage == 'settings'} ? 'active' : ''">
             <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 12C11.1046 12 12 11.1046 12 10C12 8.89543 11.1046 8 10 8C8.89543 8 8 8.89543 8 10C8 11.1046 8.89543 12 10 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <span>Settings</span>
             </svg>
+            <span th:text="#{sidebar.settings}">Settings</span>
         </a>
+
+        <div class="nav-item"
+             style="cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 0; height: auto; padding: 12px 16px;"
+             onclick="const menu = this.querySelector('.lang-dropdown-menu'); const arrow = this.querySelector('.arrow-icon'); if(menu.style.display === 'none') { menu.style.display = 'flex'; arrow.style.transform = 'rotate(180deg)'; } else { menu.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; }">
+
+            <div style="display: flex; align-items: center; width: 100%; gap: 12px;">
+                <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                <span th:text="#{sidebar.language}" style="flex-grow: 1;">Language</span>
+                <svg class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s ease;">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+
+            <div class="lang-dropdown-menu" style="display: none; flex-direction: column; gap: 8px; padding-left: 32px; margin-top: 12px; width: 100%;">
+                <a th:href="@{/(lang='en')}" class="lang-link" style="display: flex; align-items: center; gap: 10px; color: #9CA3AF; text-decoration: none; font-size: 14px; transition: color 0.2s;">
+                    <span style="font-size: 16px;">🇺🇸</span>
+                    <span th:text="#{sidebar.language.en}">English</span>
+                </a>
+                <a th:href="@{/(lang='bg')}" class="lang-link" style="display: flex; align-items: center; gap: 10px; color: #9CA3AF; text-decoration: none; font-size: 14px; transition: color 0.2s;">
+                    <span style="font-size: 16px;">🇧🇬</span>
+                    <span th:text="#{sidebar.language.bg}">Bulgarian</span>
+                </a>
+                <a th:href="@{/(lang='de')}" class="lang-link" style="display: flex; align-items: center; gap: 10px; color: #9CA3AF; text-decoration: none; font-size: 14px; transition: color 0.2s;">
+                    <span style="font-size: 16px;">🇩🇪</span>
+                    <span th:text="#{sidebar.language.de}">German</span>
+                </a>
+                <a th:href="@{/(lang='fr')}" class="lang-link" style="display: flex; align-items: center; gap: 10px; color: #9CA3AF; text-decoration: none; font-size: 14px; transition: color 0.2s;">
+                    <span style="font-size: 16px;">🇫🇷</span>
+                    <span th:text="#{sidebar.language.fr}">French</span>
+                </a>
+                <a th:href="@{/(lang='es')}" class="lang-link" style="display: flex; align-items: center; gap: 10px; color: #9CA3AF; text-decoration: none; font-size: 14px; transition: color 0.2s;">
+                    <span style="font-size: 16px;">🇪🇸</span>
+                    <span th:text="#{sidebar.language.es}">Spanish</span>
+                </a>
+            </div>
+        </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -50,7 +85,7 @@
                 <path d="M7 2H4C3.46957 2 2.96086 2.21071 2.58579 2.58579C2.21071 2.96086 2 3.46957 2 4V14C2 14.5304 2.21071 15.0391 2.58579 15.4142C2.96086 15.7893 3.46957 16 4 16H7M12 13L16 9M16 9L12 5M16 9H7"
                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>Logout</span>
+            <span th:text="#{sidebar.logout}">Logout</span>
         </a>
     </div>
 </aside>
