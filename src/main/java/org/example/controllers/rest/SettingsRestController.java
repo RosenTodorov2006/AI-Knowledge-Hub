@@ -5,6 +5,8 @@ import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.models.dtos.importDtos.ChangeProfileDto;
 import org.example.models.dtos.importDtos.ChangeUserPasswordDto;
 import org.example.services.UserService;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -21,14 +23,15 @@ public class SettingsRestController {
     public static final String JSON_KEY_MESSAGE = "message";
     public static final String JSON_KEY_ERROR = "error";
     public static final String JSON_KEY_ERRORS = "errors";
-
-    public static final String MSG_PASSWORD_UPDATED = "Password updated successfully! Please use your new password for the next login.";
-    public static final String MSG_ACCOUNT_DELETED = "Account deleted successfully!";
+    private static final String MSG_KEY_PW_UPDATED = "settings.success.password";
+    private static final String MSG_KEY_DELETED = "settings.success.deleted";
 
     private final UserService userService;
+    private final MessageSource messageSource;
 
-    public SettingsRestController(UserService userService) {
+    public SettingsRestController(UserService userService, MessageSource messageSource) {
         this.userService = userService;
+        this.messageSource = messageSource;
     }
 
     @PostMapping("/changeInfo")
@@ -55,7 +58,8 @@ public class SettingsRestController {
 
         try {
             userService.changeUserPassword(changeUserPasswordDto, principal.getName());
-            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, MSG_PASSWORD_UPDATED));
+            String msg = messageSource.getMessage(MSG_KEY_PW_UPDATED, null, LocaleContextHolder.getLocale());
+            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, msg));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
         }
@@ -65,7 +69,8 @@ public class SettingsRestController {
     public ResponseEntity<Object> delete(Principal principal) {
         try {
             userService.deleteUser(principal.getName());
-            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, MSG_ACCOUNT_DELETED));
+            String msg = messageSource.getMessage(MSG_KEY_DELETED, null, LocaleContextHolder.getLocale());
+            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, msg));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
         }

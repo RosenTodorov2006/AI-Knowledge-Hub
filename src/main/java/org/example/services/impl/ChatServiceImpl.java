@@ -6,7 +6,6 @@ import org.example.models.dtos.exportDtos.ChatResponseDto;
 import org.example.models.dtos.exportDtos.ChatViewDto;
 import org.example.models.dtos.exportDtos.MessageResponseDto;
 import org.example.models.entities.*;
-import org.example.models.entities.enums.DocumentStatus;
 import org.example.models.entities.enums.MessageRole;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.repositories.*;
@@ -15,12 +14,12 @@ import org.example.utils.TextUtils;
 import org.example.utils.VectorUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,12 +28,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.example.services.impl.UserServiceImpl.ERR_USER_NOT_FOUND;
 
 @Service
 public class ChatServiceImpl implements ChatService {
-    public static final String ERR_CHAT_NOT_FOUND = "Chat not found";
-    public static final String ERR_ACCESS_DENIED = "You do not have access to this chat!";
+    private static final String MSG_KEY_NOT_FOUND = "error.chat.notfound";
+    private static final String MSG_KEY_DENIED = "error.chat.denied";
     private static final String PROMPT_TEMPLATE = "Context:\n%s\n\nQuestion: %s";
     private static final int DEFAULT_TOP_K = 5;
     private final ChatRepository chatRepository;
@@ -46,6 +44,7 @@ public class ChatServiceImpl implements ChatService {
     private final ProcessingJobService processingJobService;
     private final DocumentService documentService;
     private final OpenAiClient openAiClient;
+    private final MessageSource messageSource;
 
     public ChatServiceImpl(ChatRepository chatRepository,
                            DocumentProcessingService documentProcessingService,
@@ -55,7 +54,7 @@ public class ChatServiceImpl implements ChatService {
                            UserService userService,
                            ProcessingJobService processingJobService,
                            DocumentService documentService,
-                           OpenAiClient openAiClient) {
+                           OpenAiClient openAiClient, MessageSource messageSource) {
         this.chatRepository = chatRepository;
         this.documentProcessingService = documentProcessingService;
         this.messageService = messageService;
@@ -65,6 +64,7 @@ public class ChatServiceImpl implements ChatService {
         this.processingJobService = processingJobService;
         this.documentService = documentService;
         this.openAiClient = openAiClient;
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -84,7 +84,9 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public ChatResponseDto generateResponse(Long chatId, String content) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException(ERR_CHAT_NOT_FOUND));
+                .orElseThrow(() -> new RuntimeException(
+                        messageSource.getMessage(MSG_KEY_NOT_FOUND, null, LocaleContextHolder.getLocale())
+                ));
 
         messageService.saveMessage(chat, content, MessageRole.USER);
 
@@ -112,7 +114,10 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public ChatViewDto getChatDetails(Long id, String gmail) {
         Chat chat = chatRepository.findByIdAndUserEntityEmail(id, gmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, ERR_ACCESS_DENIED));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        messageSource.getMessage(MSG_KEY_DENIED, null, LocaleContextHolder.getLocale())
+                ));
 
         ChatViewDto dto = modelMapper.map(chat, ChatViewDto.class);
         dto.setDocumentFilename(chat.getDocument().getFilename());

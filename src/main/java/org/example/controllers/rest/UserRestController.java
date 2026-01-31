@@ -3,6 +3,8 @@ package org.example.controllers.rest;
 import jakarta.validation.Valid;
 import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.services.UserService;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,14 +23,14 @@ public class UserRestController {
     public static final String JSON_KEY_ERROR = "error";
     public static final String JSON_KEY_ERRORS = "errors";
     public static final String JSON_KEY_USERNAME = "username";
-
-    public static final String MSG_REGISTRATION_SUCCESS = "User registered successfully!";
-    public static final String MSG_NOT_LOGGED_IN = "No user is currently logged in.";
-
+    private static final String MSG_KEY_REGISTER_SUCCESS = "auth.success.register";
+    private static final String MSG_KEY_NOT_LOGGED_IN = "auth.error.not.logged.in";
     private final UserService userService;
+    private final MessageSource messageSource;
 
-    public UserRestController(UserService userService) {
+    public UserRestController(UserService userService, MessageSource messageSource) {
         this.userService = userService;
+        this.messageSource = messageSource;
     }
 
     @PostMapping("/register")
@@ -40,7 +42,8 @@ public class UserRestController {
 
         try {
             userService.register(registerSeedDto);
-            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, MSG_REGISTRATION_SUCCESS));
+            String msg = messageSource.getMessage(MSG_KEY_REGISTER_SUCCESS, null, LocaleContextHolder.getLocale());
+            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, msg));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
         }
@@ -49,8 +52,9 @@ public class UserRestController {
     @GetMapping("/me")
     public ResponseEntity<Object> getCurrentUser(Principal principal) {
         if (principal == null) {
+            String msg = messageSource.getMessage(MSG_KEY_NOT_LOGGED_IN, null, LocaleContextHolder.getLocale());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of(JSON_KEY_MESSAGE, MSG_NOT_LOGGED_IN));
+                    .body(Map.of(JSON_KEY_MESSAGE, msg));
         }
 
         return ResponseEntity.ok(Map.of(JSON_KEY_USERNAME, principal.getName()));

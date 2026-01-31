@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Constraint(validatedBy = EqualsPasswordValidator.class)
 public @interface ValidPasswords {
-    String message() default "Password and confirm password must be equals!";
+    String message() default "{validation.user.passwords.match.equals}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

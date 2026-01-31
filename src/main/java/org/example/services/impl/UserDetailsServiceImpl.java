@@ -2,6 +2,8 @@ package org.example.services.impl;
 
 import org.example.models.entities.UserEntity;
 import org.example.repositories.UserRepository;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,19 +15,22 @@ import java.util.List;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
     public static final String ROLE_PREFIX = "ROLE_";
-    public static final String ERR_INVALID_EMAIL = "Invalid email";
-
+    private static final String MSG_KEY_NOT_FOUND = "error.auth.user.notfound";
     private final UserRepository userRepository;
+    private final MessageSource messageSource;
 
-    public UserDetailsServiceImpl(UserRepository userRepository) {
+    public UserDetailsServiceImpl(UserRepository userRepository, MessageSource messageSource) {
         this.userRepository = userRepository;
+        this.messageSource = messageSource;
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return this.userRepository.findByEmail(email)
                 .map(UserDetailsServiceImpl::mapToUserDetails)
-                .orElseThrow(() -> new UsernameNotFoundException(ERR_INVALID_EMAIL));
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        messageSource.getMessage(MSG_KEY_NOT_FOUND, null, LocaleContextHolder.getLocale())
+                ));
     }
 
     private static UserDetails mapToUserDetails(UserEntity user) {

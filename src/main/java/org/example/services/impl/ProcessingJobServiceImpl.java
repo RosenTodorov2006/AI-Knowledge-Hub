@@ -5,25 +5,30 @@ import org.example.models.entities.ProcessingJob;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.services.ProcessingJobService;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class ProcessingJobServiceImpl implements ProcessingJobService {
-    private static final String ERR_JOB_NOT_FOUND = "Job not found";
+    private static final String MSG_KEY_NOT_FOUND = "error.job.notfound";
     private final ProcessingJobRepository processingJobRepository;
+    private final MessageSource messageSource;
 
-    public ProcessingJobServiceImpl(ProcessingJobRepository processingJobRepository) {
+    public ProcessingJobServiceImpl(ProcessingJobRepository processingJobRepository, MessageSource messageSource) {
         this.processingJobRepository = processingJobRepository;
+        this.messageSource = messageSource;
     }
 
     @Override
     public ProcessingJob findByDocumentId(long documentId) {
         return processingJobRepository.findByDocumentId(documentId)
-                .orElseThrow(() -> new RuntimeException(ERR_JOB_NOT_FOUND));
+                .orElseThrow(() -> new RuntimeException(
+                        messageSource.getMessage(MSG_KEY_NOT_FOUND, null, LocaleContextHolder.getLocale())
+                ));
     }
-
     @Override
     public void saveProcessingJob(ProcessingJob processingJob) {
         processingJobRepository.save(processingJob);

@@ -3,12 +3,14 @@ package org.example.models.dtos.importDtos;
 import jakarta.validation.constraints.NotNull;
 import org.example.validation.annotation.ValidPasswords;
 import org.hibernate.validator.constraints.Length;
-@ValidPasswords
+@ValidPasswords(message = "{validation.user.passwords.match}")
 public class ChangeUserPasswordDto {
-    @Length(min = 3, max = 20, message = "Password length must be between 3 and 20 characters.")
+
+    @Length(min = 3, max = 20, message = "{validation.user.password.length}")
     @NotNull
     private String password;
-    @Length(min = 3, max = 20, message = "Confirm password length must be between 3 and 20 characters.")
+
+    @Length(min = 3, max = 20, message = "{validation.user.password.confirm.length}")
     @NotNull
     private String confirmPassword;
 

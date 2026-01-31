@@ -9,21 +9,25 @@ import org.example.validation.annotation.ValidPasswords;
 import org.hibernate.validator.constraints.Length;
 @ValidPasswords
 public class RegisterSeedDto {
-    @Length(min = 3, max = 20, message = "Name length must be between 3 and 20 characters.")
+    @Length(min = 3, max = 20, message = "{validation.user.username.length}")
     @NotNull
-    @UniqueUsername
+    @UniqueUsername(message = "{validation.user.username.unique}")
     private String username;
-    @Email(message = "Invalid email.")
-    @NotBlank(message = "Invalid email.")
-    @UniqueEmail
+
+    @Email(message = "{validation.user.email.invalid}")
+    @NotBlank(message = "{validation.user.email.required}")
+    @UniqueEmail(message = "{validation.user.email.unique}")
     private String email;
-    @Length(min = 3, max = 20, message = "Password length must be between 3 and 20 characters.")
+
+    @Length(min = 3, max = 20, message = "{validation.user.password.length}")
     @NotNull
     private String password;
-    @Length(min = 3, max = 20, message = "Confirm password length must be between 3 and 20 characters.")
+
+    @Length(min = 3, max = 20, message = "{validation.user.password.confirm.length}")
     @NotNull
     private String confirmPassword;
-    @Length(min = 3, max = 20, message = "Full name length must be between 3 and 20 characters.")
+
+    @Length(min = 3, max = 20, message = "{validation.user.fullname.length}")
     @NotNull
     private String fullName;
 

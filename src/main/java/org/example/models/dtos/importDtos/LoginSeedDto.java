@@ -6,11 +6,12 @@ import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.Length;
 
 public class LoginSeedDto {
-    @Email(message = "Invalid email.")
-    @NotBlank(message = "Invalid email.")
+    @Email(message = "{validation.user.email.invalid}")
+    @NotBlank(message = "{validation.user.email.required}")
     private String email;
-    @Length(min = 3, max = 20, message = "Password length must be between 3 and 20 characters.")
-    @NotNull
+
+    @Length(min = 3, max = 20, message = "{validation.user.password.length}")
+    @NotNull(message = "{validation.user.password.required}")
     private String password;
 
     public String getEmail() {

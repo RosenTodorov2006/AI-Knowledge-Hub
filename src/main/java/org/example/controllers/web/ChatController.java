@@ -5,6 +5,8 @@ import org.example.models.dtos.exportDtos.ChatViewDto;
 import org.example.services.ChatService;
 import org.example.services.DashboardService;
 import org.example.services.UserService;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.util.Locale;
 
 @Controller
 public class ChatController {
@@ -20,19 +23,24 @@ public class ChatController {
     public static final String ATTR_CURRENT_USER = "currentUser";
     public static final String ATTR_CHAT = "chat";
     public static final String ATTR_ERROR = "error";
-    public static final String PARAM_ERROR_TRUE = "error=true";
     public static final String ANCHOR_BOTTOM = "#bottom-anchor";
-    public static final String ERR_MSG_EMPTY_FILE = "Please select a file.";
-    public static final String ERR_MSG_PROCESS_PREFIX = "Processing error: ";
+    private static final String MSG_ERR_FILE_EMPTY = "error.chat.file.empty";
+    private static final String MSG_ERR_PROCESS_PREFIX = "error.chat.process.prefix";
+    private static final String MSG_ERR_SEND_FAILED = "error.chat.send.failed";
 
     private final DashboardService dashboardService;
     private final ChatService chatService;
     private final UserService userService;
+    private final MessageSource messageSource;
 
-    public ChatController(DashboardService dashboardService, ChatService chatService, UserService userService) {
+    public ChatController(DashboardService dashboardService,
+                          ChatService chatService,
+                          UserService userService,
+                          MessageSource messageSource) {
         this.dashboardService = dashboardService;
         this.chatService = chatService;
         this.userService = userService;
+        this.messageSource = messageSource;
     }
 
     @GetMapping("/dashboard")
@@ -42,6 +50,7 @@ public class ChatController {
         model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
         return "dashboard";
     }
+
     @GetMapping("/chats/select/{id}")
     public String selectChat(@PathVariable Long id, HttpSession session) {
         session.setAttribute(SESSION_CHAT_ID, id);
@@ -65,8 +74,11 @@ public class ChatController {
                                     Principal principal,
                                     HttpSession session,
                                     RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
+
         if (file.isEmpty()) {
-            redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_EMPTY_FILE);
+            String errorMsg = messageSource.getMessage(MSG_ERR_FILE_EMPTY, null, locale);
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, errorMsg);
             return "redirect:/dashboard";
         }
 
@@ -75,15 +87,18 @@ public class ChatController {
             session.setAttribute(SESSION_CHAT_ID, newChatDto.getId());
             return "redirect:/chat";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute(ATTR_ERROR, ERR_MSG_PROCESS_PREFIX + e.getMessage());
+            String prefix = messageSource.getMessage(MSG_ERR_PROCESS_PREFIX, null, locale);
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, prefix + " " + e.getMessage());
             return "redirect:/dashboard";
         }
     }
 
     @PostMapping("/chat/send")
     public String sendMessage(HttpSession session,
-                              @RequestParam("message") String content) {
+                              @RequestParam("message") String content,
+                              RedirectAttributes redirectAttributes) {
         Long id = (Long) session.getAttribute(SESSION_CHAT_ID);
+        Locale locale = LocaleContextHolder.getLocale();
 
         if (id == null || content == null || content.trim().isEmpty()) {
             return "redirect:/chat";
@@ -93,7 +108,9 @@ public class ChatController {
             chatService.generateResponse(id, content);
             return "redirect:/chat" + ANCHOR_BOTTOM;
         } catch (Exception e) {
-            return "redirect:/chat" + "?" + PARAM_ERROR_TRUE;
+            String errorMsg = messageSource.getMessage(MSG_ERR_SEND_FAILED, null, locale);
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, errorMsg);
+            return "redirect:/chat";
         }
     }
 }

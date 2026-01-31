@@ -7,12 +7,12 @@ import org.example.validation.annotation.UniqueEmail;
 import org.hibernate.validator.constraints.Length;
 
 public class ChangeProfileDto {
-    @Email(message = "Invalid email.")
-    @NotBlank(message = "Invalid email.")
-    @UniqueEmail(message = "Gmail already use.")
+    @Email(message = "{validation.user.email.invalid}")
+    @NotBlank(message = "{validation.user.email.required}")
+    @UniqueEmail(message = "{validation.user.email.unique}")
     private String email;
-    @Length(min = 3, max = 20, message = "Full name length must be between 3 and 20 characters.")
-    @NotNull(message = "Full name length must be between 3 and 20 characters.")
+    @Length(min = 3, max = 20, message = "{validation.user.fullname.length}")
+    @NotNull(message = "{validation.user.fullname.required}")
     private String fullName;
 
     public String getEmail() {
