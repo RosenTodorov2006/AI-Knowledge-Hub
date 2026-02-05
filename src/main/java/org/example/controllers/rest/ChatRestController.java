@@ -25,7 +25,6 @@ import static org.example.controllers.rest.UserRestController.JSON_KEY_ERROR;
 public class ChatRestController {
     private static final String MSG_KEY_EMPTY_FILE = "error.chat.file.empty";
     private static final String MSG_KEY_PROCESS_PREFIX = "error.chat.process.prefix";
-    public static final String ERR_MSG_PROCESS_PREFIX = "Processing error: ";
     private final DashboardService dashboardService;
     private final ChatService chatService;
     private final MessageSource messageSource;

@@ -2,6 +2,7 @@ package org.example.controllers.web;
 import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.services.AdminService;
 import org.example.services.UserService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import java.security.Principal;
 
 @Controller
 @RequestMapping("/admin")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     public static final String ATTR_JOBS = "jobs";
     public static final String ATTR_STATS = "stats";

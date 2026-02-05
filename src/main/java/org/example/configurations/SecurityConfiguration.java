@@ -22,6 +22,8 @@ public class SecurityConfiguration {
                                 .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features").permitAll()
                                 .requestMatchers("/api/chats/**").permitAll()
                                 .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .httpBasic(org.springframework.security.config.Customizer.withDefaults())
