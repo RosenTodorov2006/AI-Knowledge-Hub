@@ -18,12 +18,11 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                                .requestMatchers("/img/**").permitAll()
-                                .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features").permitAll()
+                                .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
+                                .requestMatchers("/", "/login", "/register", "/work", "/pricing", "/features", "/login-error").permitAll() // Добави /login-error тук!
                                 .requestMatchers("/api/chats/**").permitAll()
                                 .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
-                                .requestMatchers("/admin/**").hasRole("ADMIN")
-                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .httpBasic(org.springframework.security.config.Customizer.withDefaults())
