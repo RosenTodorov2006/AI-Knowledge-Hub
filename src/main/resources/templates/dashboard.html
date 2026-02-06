@@ -12,7 +12,8 @@
         <header class="content-header">
             <div class="header-left">
                 <h1 class="page-title" th:text="#{dashboard.title}">My Document Chats</h1>
-                <p class="page-subtitle" th:text="#{dashboard.subtitle(${allChats.size()})}">0 documents</p>
+                <p class="page-subtitle"
+                   th:text="#{dashboard.subtitle(${allChats.?[documentStatus.name() != 'FAILED'].size()})}">0 documents</p>
             </div>
             <button class="upload-btn" onclick="showUploadModal()">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -31,28 +32,31 @@
         </div>
 
         <div class="documents-grid">
-            <div th:each="chat : ${allChats}" class="doc-card"
-                 th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
-                 style="cursor: pointer;">
+            <th:block th:each="chat : ${allChats}">
+                <div th:if="${chat.documentStatus.name() != 'FAILED'}"
+                     class="doc-card"
+                     th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
+                     style="cursor: pointer;">
 
-                <div class="doc-card-header">
-                    <div class="doc-file-info">
-                        <svg class="file-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span class="doc-filename" th:text="${chat.filename}">Filename.pdf</span>
+                    <div class="doc-card-header">
+                        <div class="doc-file-info">
+                            <svg class="file-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="doc-filename" th:text="${chat.filename}">Filename.pdf</span>
+                        </div>
+
+                        <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
+                              th:text="${chat.documentStatus}">Ready</span>
                     </div>
 
-                    <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
-                          th:text="${chat.documentStatus}">Ready</span>
+                    <div class="doc-card-body">
+                        <p class="doc-date" th:text="${#temporals.format(chat.uploadedAt, 'MMM dd, yyyy')}">Dec 20, 2024</p>
+                        <p class="doc-preview" th:text="${chat.title}">Chat Title Preview</p>
+                    </div>
                 </div>
-
-                <div class="doc-card-body">
-                    <p class="doc-date" th:text="${#temporals.format(chat.uploadedAt, 'MMM dd, yyyy')}">Dec 20, 2024</p>
-                    <p class="doc-preview" th:text="${chat.title}">Chat Title Preview</p>
-                </div>
-            </div>
+            </th:block>
 
             <div class="doc-card start-new-card" onclick="showUploadModal()" style="cursor: pointer;">
                 <div class="start-new-content">

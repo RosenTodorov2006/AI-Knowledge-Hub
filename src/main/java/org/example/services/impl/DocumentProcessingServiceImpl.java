@@ -7,25 +7,30 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.example.models.entities.Document;
 import org.example.models.entities.DocumentChunk;
 import org.example.models.entities.ProcessingJob;
+import org.example.models.entities.enums.DocumentStatus;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.repositories.ChunkSearchResult;
 import org.example.repositories.DocumentChunkRepository;
 import org.example.repositories.ProcessingJobRepository;
 import org.example.services.DocumentProcessingService;
+import org.example.services.DocumentService;
 import org.example.services.ProcessingJobService;
 import org.example.utils.FileUtils;
 import org.example.utils.TextUtils;
 import org.example.validation.annotation.TrackProcessing;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
+import org.springframework.context.i18n.LocaleContextHolder;
 import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -33,21 +38,26 @@ import java.util.concurrent.Executor;
 @Service
 public class DocumentProcessingServiceImpl implements DocumentProcessingService {
     private static final int CHUNK_CHARACTER_LIMIT = 800;
-
     private final ProcessingJobService processingJobService;
     private final DocumentChunkRepository documentChunkRepository;
     private final EmbeddingModel embeddingModel;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final DocumentService documentService;
+    private final MessageSource messageSource;
 
     @Qualifier("taskExecutor")
     private final Executor taskExecutor;
 
     public DocumentProcessingServiceImpl(ProcessingJobService processingJobService,
                                          DocumentChunkRepository documentChunkRepository,
-                                         EmbeddingModel embeddingModel,
+                                         EmbeddingModel embeddingModel, SimpMessagingTemplate messagingTemplate, DocumentService documentService, MessageSource messageSource,
                                          Executor taskExecutor) {
         this.processingJobService = processingJobService;
         this.documentChunkRepository = documentChunkRepository;
         this.embeddingModel = embeddingModel;
+        this.messagingTemplate = messagingTemplate;
+        this.documentService = documentService;
+        this.messageSource = messageSource;
         this.taskExecutor = taskExecutor;
     }
 
@@ -61,8 +71,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
 
         try {
             updateJobStage(job, ProcessingJobStage.PARSING);
-            String text = FileUtils.extractTextFromPdf(document.getContent());
-
+            String text = extractTextBasedOnType(document);
             updateJobStage(job, ProcessingJobStage.INDEXING);
             processChunks(document, text);
 
@@ -127,5 +136,37 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         job.setStage(ProcessingJobStage.FAILED);
         job.setErrorMessage(e.getMessage());
         processingJobService.saveProcessingJob(job);
+        Document document = job.getDocument();
+        this.documentService.updateDocumentStatus(document, DocumentStatus.FAILED);
+
+        messagingTemplate.convertAndSend("/topic/doc-status/" + job.getDocument().getId(),
+                Map.of("status", "FAILED", "message", e.getMessage()));
+    }
+
+    private String extractTextBasedOnType(Document document) throws IOException {
+        String fileName = document.getFilename().toLowerCase();
+        byte[] content = document.getContent();
+
+        if (fileName.endsWith(".pdf")) {
+            return FileUtils.extractTextFromPdf(content);
+        } else if (fileName.endsWith(".docx")) {
+            return FileUtils.extractTextFromDocx(content);
+        } else if (fileName.endsWith(".doc")) {
+            return FileUtils.extractTextFromDocLegacy(content);
+        } else if (fileName.endsWith(".pptx")) {
+            return FileUtils.extractTextFromPptx(content);
+        } else if (fileName.endsWith(".ppt")) {
+            return FileUtils.extractTextFromPptLegacy(content);
+        } else if (fileName.endsWith(".txt")) {
+            return FileUtils.extractTextFromTxt(content);
+        } else {
+            String originalFileName = document.getFilename();
+            String translatedMessage = messageSource.getMessage(
+                    "error.unsupported.format",
+                    new Object[]{originalFileName},
+                    LocaleContextHolder.getLocale()
+            );
+            throw new IllegalArgumentException(translatedMessage);
+        }
     }
 }

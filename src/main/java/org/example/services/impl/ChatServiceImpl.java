@@ -26,6 +26,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -156,7 +158,9 @@ public class ChatServiceImpl implements ChatService {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    documentProcessingService.processDocument(documentId);
+                    CompletableFuture.runAsync(() -> {
+                        documentProcessingService.processDocument(documentId);
+                    }, CompletableFuture.delayedExecutor(500, TimeUnit.MILLISECONDS));
                 }
             });
         } else {

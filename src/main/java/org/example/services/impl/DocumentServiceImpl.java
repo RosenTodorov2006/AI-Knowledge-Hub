@@ -25,4 +25,12 @@ public class DocumentServiceImpl implements DocumentService {
                 LocalDateTime.now(), file.getBytes());
         return documentRepository.save(document);
     }
+
+    @Override
+    public void updateDocumentStatus(Document document, DocumentStatus documentStatus) {
+        document.setDocumentStatus(DocumentStatus.FAILED);
+        documentRepository.save(document);
+    }
+
+
 }

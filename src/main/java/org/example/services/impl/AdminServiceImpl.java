@@ -2,26 +2,17 @@ package org.example.services.impl;
 
 import org.example.models.dtos.exportDtos.AdminStatsDto;
 import org.example.models.dtos.exportDtos.ProcessingJobDto;
-import org.example.models.entities.Document;
 import org.example.models.entities.ProcessingJob;
-import org.example.models.entities.enums.DocumentStatus;
 import org.example.models.entities.enums.ProcessingJobStage;
-import org.example.repositories.ChatRepository;
-import org.example.repositories.DocumentChunkRepository;
-import org.example.repositories.DocumentRepository;
-import org.example.repositories.ProcessingJobRepository;
 import org.example.services.AdminService;
 import org.example.services.ChatService;
 import org.example.services.DocumentProcessingService;
 import org.example.services.ProcessingJobService;
 import org.example.utils.DateTimeUtils;
 import org.example.utils.FormatUtils;
-import org.example.utils.JobUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,8 +64,15 @@ public class AdminServiceImpl implements AdminService {
 
         dto.setTimeAgo(DateTimeUtils.formatTimeAgo(job.getDocument().getUploadedAt()));
 
-        JobUtils.enrichStageFlags(dto, job.getStage());
+        enrichStageFlags(dto, job.getStage());
 
         return dto;
+    }
+    public static void enrichStageFlags(ProcessingJobDto dto, ProcessingJobStage currentStage) {
+        int currentOrdinal = currentStage.ordinal();
+        dto.setExtractPassed(currentOrdinal > ProcessingJobStage.PARSING.ordinal());
+        dto.setChunkPassed(currentOrdinal > ProcessingJobStage.SPLIT.ordinal());
+        dto.setEmbedPassed(currentStage == ProcessingJobStage.INDEXING
+                || currentStage == ProcessingJobStage.COMPLETED);
     }
 }

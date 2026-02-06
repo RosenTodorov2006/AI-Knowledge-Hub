@@ -1,5 +1,6 @@
 package org.example.unit.service;
 
+import org.example.services.DocumentService;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.Mock;
@@ -20,6 +21,9 @@ import org.example.utils.TextUtils;
 import java.util.List;
 import org.example.models.entities.enums.ProcessingJobStage;
 import org.example.models.entities.DocumentChunk;
+import org.springframework.context.MessageSource;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 import static org.mockito.ArgumentMatchers.*;
 @ExtendWith(MockitoExtension.class)
 public class DocumentProcessingServiceImplTest {
@@ -35,13 +39,24 @@ public class DocumentProcessingServiceImplTest {
     private EmbeddingModel embeddingModel;
     @Mock
     private Executor taskExecutor;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
     private DocumentProcessingServiceImpl documentProcessingService;
+    @Mock
+    private DocumentService documentService;
+    @Mock
+    private MessageSource messageSource;
+
+
     @BeforeEach
     public void setUp() {
         documentProcessingService = new DocumentProcessingServiceImpl(
                 processingJobService,
                 documentChunkRepository,
                 embeddingModel,
+                messagingTemplate,
+                documentService,
+                messageSource,
                 taskExecutor
         );
     }
@@ -50,6 +65,8 @@ public class DocumentProcessingServiceImplTest {
         ProcessingJob job = new ProcessingJob();
         Document doc = new Document();
         doc.setId(TEST_DOC_ID);
+        doc.setFilename("test_document.pdf");
+
         job.setDocument(doc);
 
         try (MockedStatic<FileUtils> fileUtils = Mockito.mockStatic(FileUtils.class);
@@ -76,8 +93,9 @@ public class DocumentProcessingServiceImplTest {
     @Test
     public void testProcessDocumentShouldHandleFailure() {
         ProcessingJob job = new ProcessingJob();
-        job.setDocument(new Document());
-
+        Document doc = new Document();
+        doc.setFilename("error_test.pdf");
+        job.setDocument(doc);
         Mockito.when(processingJobService.findByDocumentId(anyLong())).thenReturn(job);
 
         try (MockedStatic<FileUtils> fileUtils = Mockito.mockStatic(FileUtils.class)) {

@@ -45,6 +45,8 @@ dependencies {
     implementation 'ai.djl.pytorch:pytorch-engine:0.26.0'
     implementation 'ai.djl.pytorch:pytorch-native-cpu:2.1.1'
     implementation 'ai.djl.huggingface:tokenizers:0.26.0'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
+    implementation 'org.apache.poi:poi-scratchpad:5.2.3'
 
     // Махаме ONNX, за да не стават конфликти
     configurations.all {
