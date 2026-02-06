@@ -162,7 +162,6 @@
 
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
-        // Променливи за интернационализация
         const jsVectorTitle = [[#{chat.js.vector.title}]];
         const jsVectorDesc = [[#{chat.js.vector.desc}]];
         const jsTimeNow = [[#{chat.js.time.now}]];
@@ -175,35 +174,26 @@
         const messageForm = document.getElementById('messageForm');
         const userInput = document.getElementById('userInput');
 
-        // Скрол до дъното при зареждане
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // --- ЛОГИКА ЗА ИЗПРАЩАНЕ НА СЪОБЩЕНИЕ (FETCH) ---
+        // --- ЛОГИКА ЗА ИЗПРАЩАНЕ НА СЪОБЩЕНИЕ ---
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
-
             const text = userInput.value.trim();
             if (!text) return;
 
-            // 1. Показваме веднага съобщението на потребителя
             const userDiv = document.createElement('div');
             userDiv.className = 'bubble user-bubble';
             userDiv.textContent = text;
             chatMessages.appendChild(userDiv);
-
-            // 2. Изчистваме полето
             userInput.value = '';
 
-            // 3. Показваме пулсиращите точки "Thinking..."
             const aiThinkingDiv = document.createElement('div');
             aiThinkingDiv.className = 'bubble ai-bubble thinking-dots';
             aiThinkingDiv.innerHTML = `<span>.</span><span>.</span><span>.</span>`;
             chatMessages.appendChild(aiThinkingDiv);
-
-            // Скрол до новото съобщение
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // 4. Изпращаме заявката асинхронно
             const formData = new FormData(messageForm);
             formData.set('message', text);
 
@@ -211,47 +201,38 @@
                 method: 'POST',
                 body: formData
             }).then(response => {
-                if (response.ok) {
-                    // Когато отговорът е готов, презареждаме за целия списък и източниците
-                    window.location.reload();
-                }
+                if (response.ok) window.location.reload();
             }).catch(err => {
                 aiThinkingDiv.textContent = "Грешка при връзката.";
                 console.error(err);
             });
         });
 
-        // --- ЛОГИКА ЗА WEBSOCKET (СТАТУС НА ДОКУМЕНТ) ---
+        // --- ЛОГИКА ЗА СТАТУС (WEBSOCKET + BACKUP POLLING) ---
         if (initialStage !== 'COMPLETED' && initialStage !== 'FAILED') {
             const socket = new SockJS('/ws');
             const stompClient = Stomp.over(socket);
             stompClient.debug = null;
+
+            // ФУНКЦИЯ ЗА ПРОВЕРКА (RECOVERY)
+            // Ако WebSocket не сработи, просто презареждаме страницата след 3 сек.
+            // Тъй като ти каза, че базата се пълни, един reload ще покаже документа.
+            const backupCheck = setInterval(function() {
+                console.log("Checking if processing is finished...");
+                window.location.reload();
+            }, 5000); // Проверява на всеки 5 секунди
 
             stompClient.connect({}, function () {
                 stompClient.subscribe('/topic/doc-status/' + docId, function (response) {
                     const data = JSON.parse(response.body);
 
                     if (data.status === 'COMPLETED') {
+                        clearInterval(backupCheck); // Спираме проверката, ако WebSocket-а успее
                         window.location.reload();
                     }
                     else if (data.status === 'FAILED') {
-                        document.getElementById('modernSpinner').style.display = 'none';
-                        document.getElementById('statusDot').style.display = 'none';
-                        document.getElementById('errorIcon').style.display = 'block';
-
-                        const title = document.getElementById('processingTitle');
-                        title.textContent = jsProcessingFailed;
-                        title.style.color = "#EF4444";
-
-                        const stageText = document.getElementById('currentStageText');
-                        stageText.textContent = jsStatusError;
-                        stageText.style.color = "#EF4444";
-
-                        const desc = document.getElementById('processingDesc');
-                        desc.textContent = data.message;
-                        desc.style.color = "#B91C1C";
-
-                        document.getElementById('errorBackBtn').style.display = 'block';
+                        clearInterval(backupCheck);
+                        showError(data.message);
                         stompClient.disconnect();
                     }
                     else {
@@ -261,9 +242,24 @@
                 });
             });
         }
+
+        function showError(msg) {
+            document.getElementById('modernSpinner').style.display = 'none';
+            document.getElementById('statusDot').style.display = 'none';
+            document.getElementById('errorIcon').style.display = 'block';
+            const title = document.getElementById('processingTitle');
+            title.textContent = jsProcessingFailed;
+            title.style.color = "#EF4444";
+            const stageText = document.getElementById('currentStageText');
+            stageText.textContent = jsStatusError;
+            stageText.style.color = "#EF4444";
+            const desc = document.getElementById('processingDesc');
+            desc.textContent = msg;
+            desc.style.color = "#B91C1C";
+            document.getElementById('errorBackBtn').style.display = 'block';
+        }
     });
 
-    // Обработка на Enter без Shift
     document.getElementById('userInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
