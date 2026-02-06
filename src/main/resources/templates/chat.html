@@ -62,17 +62,35 @@
 
         <div style="flex: 1; position: relative; width: 100%;">
             <div id="processingUI" th:style="${chat.stage.name() != 'COMPLETED' ? 'display: flex;' : 'display: none;'}">
-                <div class="modern-spinner"></div>
-                <h2 style="margin-top: 24px; color: #111827; font-size: 20px; font-weight: 700;" th:text="#{chat.processing.title}">Processing Document</h2>
+
+                <div id="modernSpinner" class="modern-spinner" th:style="${chat.stage.name() == 'FAILED' ? 'display: none;' : ''}"></div>
+
+                <div id="errorIcon" th:style="${chat.stage.name() == 'FAILED' ? 'display: block;' : 'display: none;'}" style="color: #EF4444; margin-bottom: 20px;">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+
+                <h2 id="processingTitle" style="margin-top: 24px; color: #111827; font-size: 20px; font-weight: 700;"
+                    th:text="${chat.stage.name() == 'FAILED' ? #messages.msg('chat.processing.failed') : #messages.msg('chat.processing.title')}">
+                    Processing Document
+                </h2>
 
                 <div style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; background: white; padding: 8px 16px; border-radius: 24px; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <span style="width: 10px; height: 10px; background: #5D5DFE; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+                    <div id="statusBadge" style="display: flex; align-items: center; gap: 8px; background: white; padding: 8px 16px; border-radius: 24px; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <span id="statusDot" th:style="${chat.stage.name() == 'FAILED' ? 'display: none;' : ''}"
+                              style="width: 10px; height: 10px; background: #5D5DFE; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
                         <span id="currentStageText" style="color: #4B5563; font-weight: 700; text-transform: uppercase;" th:text="${chat.stage}">UPLOADED</span>
                     </div>
-                    <p style="margin-top: 16px; color: #6B7280; font-size: 14px; max-width: 340px; line-height: 1.6;" th:text="#{chat.processing.desc}">
+
+                    <p id="processingDesc" style="margin-top: 16px; color: #6B7280; font-size: 14px; max-width: 340px; line-height: 1.6; text-align: center;"
+                       th:text="${chat.stage.name() == 'FAILED' ? chat.errorMessage : #messages.msg('chat.processing.desc')}">
                         The AI engine is currently indexing your file.
                     </p>
+
+                    <a id="errorBackBtn" th:href="@{/dashboard}" th:style="${chat.stage.name() == 'FAILED' ? 'display: block;' : 'display: none;'}"
+                       style="margin-top: 20px; background: #5D5DFE; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: background 0.2s;"
+                       th:text="#{chat.button.return}">
+                        Return to Dashboard
+                    </a>
                 </div>
             </div>
 
@@ -148,6 +166,10 @@
         const jsVectorDesc = [[#{chat.js.vector.desc}]];
         const jsTimeNow = [[#{chat.js.time.now}]];
 
+        // Поправено: Нови променливи за интернационализация в JS
+        const jsProcessingFailed = [[#{chat.processing.failed}]];
+        const jsStatusError = [[#{chat.status.error}]];
+
         const docId = [[${chat.documentId}]];
         const initialStage = [[${chat.stage.name()}]];
         const chatMessages = document.getElementById('chatMessages');
@@ -168,21 +190,46 @@
 
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        if (initialStage !== 'COMPLETED') {
+        if (initialStage !== 'COMPLETED' && initialStage !== 'FAILED') {
             const socket = new SockJS('/ws');
             const stompClient = Stomp.over(socket);
             stompClient.debug = null;
 
             stompClient.connect({}, function () {
-                stompClient.subscribe('/topic/processing/' + docId, function (response) {
-                    if (response.body === 'COMPLETED') {
+                stompClient.subscribe('/topic/doc-status/' + docId, function (response) {
+                    const data = JSON.parse(response.body);
+
+                    if (data.status === 'COMPLETED') {
                         document.getElementById('processingUI').style.display = 'none';
                         document.getElementById('documentContent').style.display = 'block';
                         appendSuccessMessage();
                         stompClient.disconnect();
-                    } else {
+                    }
+                    else if (data.status === 'FAILED') {
+                        document.getElementById('modernSpinner').style.display = 'none';
+                        document.getElementById('statusDot').style.display = 'none';
+                        document.getElementById('errorIcon').style.display = 'block';
+
+                        // Поправено: Използваме преведените променливи
+                        const title = document.getElementById('processingTitle');
+                        title.textContent = jsProcessingFailed;
+                        title.style.color = "#EF4444";
+
                         const stageText = document.getElementById('currentStageText');
-                        if (stageText) stageText.textContent = response.body;
+                        stageText.textContent = jsStatusError;
+                        stageText.style.color = "#EF4444";
+
+                        const desc = document.getElementById('processingDesc');
+                        desc.textContent = data.message; // Това вече идва преведено от Java
+                        desc.style.color = "#B91C1C";
+
+                        document.getElementById('errorBackBtn').style.display = 'block';
+
+                        stompClient.disconnect();
+                    }
+                    else {
+                        const stageText = document.getElementById('currentStageText');
+                        if (stageText) stageText.textContent = data.status || data;
                     }
                 });
             });
