@@ -10,6 +10,12 @@
             * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
             body { background-color: #F9FAFB; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
+            /* Анимация за "Мислене..." */
+            .thinking-dots span { animation: blink 1.5s infinite; font-size: 18px; font-weight: bold; }
+            .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+            .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+            @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
+
             .modern-spinner {
                 width: 64px; height: 64px;
                 border: 6px solid #E5E7EB; border-top-color: #5D5DFE;
@@ -62,30 +68,24 @@
 
         <div style="flex: 1; position: relative; width: 100%;">
             <div id="processingUI" th:style="${chat.stage.name() != 'COMPLETED' ? 'display: flex;' : 'display: none;'}">
-
                 <div id="modernSpinner" class="modern-spinner" th:style="${chat.stage.name() == 'FAILED' ? 'display: none;' : ''}"></div>
-
                 <div id="errorIcon" th:style="${chat.stage.name() == 'FAILED' ? 'display: block;' : 'display: none;'}" style="color: #EF4444; margin-bottom: 20px;">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 </div>
-
                 <h2 id="processingTitle" style="margin-top: 24px; color: #111827; font-size: 20px; font-weight: 700;"
                     th:text="${chat.stage.name() == 'FAILED' ? #messages.msg('chat.processing.failed') : #messages.msg('chat.processing.title')}">
                     Processing Document
                 </h2>
-
                 <div style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
                     <div id="statusBadge" style="display: flex; align-items: center; gap: 8px; background: white; padding: 8px 16px; border-radius: 24px; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <span id="statusDot" th:style="${chat.stage.name() == 'FAILED' ? 'display: none;' : ''}"
                               style="width: 10px; height: 10px; background: #5D5DFE; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
                         <span id="currentStageText" style="color: #4B5563; font-weight: 700; text-transform: uppercase;" th:text="${chat.stage}">UPLOADED</span>
                     </div>
-
                     <p id="processingDesc" style="margin-top: 16px; color: #6B7280; font-size: 14px; max-width: 340px; line-height: 1.6; text-align: center;"
                        th:text="${chat.stage.name() == 'FAILED' ? chat.errorMessage : #messages.msg('chat.processing.desc')}">
                         The AI engine is currently indexing your file.
                     </p>
-
                     <a id="errorBackBtn" th:href="@{/dashboard}" th:style="${chat.stage.name() == 'FAILED' ? 'display: block;' : 'display: none;'}"
                        style="margin-top: 20px; background: #5D5DFE; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: background 0.2s;"
                        th:text="#{chat.button.return}">
@@ -162,34 +162,66 @@
 
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
+        // Променливи за интернационализация
         const jsVectorTitle = [[#{chat.js.vector.title}]];
         const jsVectorDesc = [[#{chat.js.vector.desc}]];
         const jsTimeNow = [[#{chat.js.time.now}]];
-
-        // Поправено: Нови променливи за интернационализация в JS
         const jsProcessingFailed = [[#{chat.processing.failed}]];
         const jsStatusError = [[#{chat.status.error}]];
 
         const docId = [[${chat.documentId}]];
         const initialStage = [[${chat.stage.name()}]];
         const chatMessages = document.getElementById('chatMessages');
+        const messageForm = document.getElementById('messageForm');
+        const userInput = document.getElementById('userInput');
 
-        function appendSuccessMessage() {
-            if (!chatMessages) return;
-            const msg = document.createElement('div');
-            msg.style.cssText = "align-self: flex-start; max-width: 80%; margin-bottom: 16px; display: flex; flex-direction: column; gap: 4px;";
-            msg.innerHTML = `
-                <div class="bubble ai-bubble" style="border-left: 4px solid #5D5DFE; background: #F3F4F6; padding: 12px 16px; border-radius: 12px 12px 12px 2px; font-size: 14px;">
-                    🚀 **${jsVectorTitle}** ${jsVectorDesc}
-                </div>
-                <span style="font-size: 11px; color: #9CA3AF; align-self: flex-start;">${jsTimeNow}</span>
-            `;
-            chatMessages.appendChild(msg);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
+        // Скрол до дъното при зареждане
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
+        // --- ЛОГИКА ЗА ИЗПРАЩАНЕ НА СЪОБЩЕНИЕ (FETCH) ---
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. Показваме веднага съобщението на потребителя
+            const userDiv = document.createElement('div');
+            userDiv.className = 'bubble user-bubble';
+            userDiv.textContent = text;
+            chatMessages.appendChild(userDiv);
+
+            // 2. Изчистваме полето
+            userInput.value = '';
+
+            // 3. Показваме пулсиращите точки "Thinking..."
+            const aiThinkingDiv = document.createElement('div');
+            aiThinkingDiv.className = 'bubble ai-bubble thinking-dots';
+            aiThinkingDiv.innerHTML = `<span>.</span><span>.</span><span>.</span>`;
+            chatMessages.appendChild(aiThinkingDiv);
+
+            // Скрол до новото съобщение
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 4. Изпращаме заявката асинхронно
+            const formData = new FormData(messageForm);
+            formData.set('message', text);
+
+            fetch(messageForm.action, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    // Когато отговорът е готов, презареждаме за целия списък и източниците
+                    window.location.reload();
+                }
+            }).catch(err => {
+                aiThinkingDiv.textContent = "Грешка при връзката.";
+                console.error(err);
+            });
+        });
+
+        // --- ЛОГИКА ЗА WEBSOCKET (СТАТУС НА ДОКУМЕНТ) ---
         if (initialStage !== 'COMPLETED' && initialStage !== 'FAILED') {
             const socket = new SockJS('/ws');
             const stompClient = Stomp.over(socket);
@@ -200,17 +232,13 @@
                     const data = JSON.parse(response.body);
 
                     if (data.status === 'COMPLETED') {
-                        document.getElementById('processingUI').style.display = 'none';
-                        document.getElementById('documentContent').style.display = 'block';
-                        appendSuccessMessage();
-                        stompClient.disconnect();
+                        window.location.reload();
                     }
                     else if (data.status === 'FAILED') {
                         document.getElementById('modernSpinner').style.display = 'none';
                         document.getElementById('statusDot').style.display = 'none';
                         document.getElementById('errorIcon').style.display = 'block';
 
-                        // Поправено: Използваме преведените променливи
                         const title = document.getElementById('processingTitle');
                         title.textContent = jsProcessingFailed;
                         title.style.color = "#EF4444";
@@ -220,11 +248,10 @@
                         stageText.style.color = "#EF4444";
 
                         const desc = document.getElementById('processingDesc');
-                        desc.textContent = data.message; // Това вече идва преведено от Java
+                        desc.textContent = data.message;
                         desc.style.color = "#B91C1C";
 
                         document.getElementById('errorBackBtn').style.display = 'block';
-
                         stompClient.disconnect();
                     }
                     else {
@@ -236,10 +263,11 @@
         }
     });
 
+    // Обработка на Enter без Shift
     document.getElementById('userInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            document.getElementById('messageForm').submit();
+            document.getElementById('messageForm').dispatchEvent(new Event('submit'));
         }
     });
 </script>
