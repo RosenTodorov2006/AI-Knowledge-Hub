@@ -7,13 +7,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: azure/login@v1
+
+      - name: Log in to Azure
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Build and Push
         run: |
-          az acr build --registry aihubregistry.azurecr.io --image ai-knowledge-hub:latest .
+          # Използваме точното име: aiknowledgeacr
+          az acr build --registry aiknowledgeacr --image ai-knowledge-hub:latest .
+
       - name: Deploy
         run: |
+          # Тук също обновяваме името на регистъра
           az containerapp update --name ai-knowledge-app --resource-group ai-hub-rg \
-            --image aihubregistry.azurecr.io/ai-knowledge-hub:latest
+            --image aiknowledgeacr.azurecr.io/ai-knowledge-hub:latest
