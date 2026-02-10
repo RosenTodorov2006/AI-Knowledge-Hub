@@ -18,6 +18,8 @@ import org.example.services.ProcessingJobService;
 import org.example.utils.FileUtils;
 import org.example.utils.TextUtils;
 import org.example.validation.annotation.TrackProcessing;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
@@ -44,6 +46,7 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     private final SimpMessagingTemplate messagingTemplate;
     private final DocumentService documentService;
     private final MessageSource messageSource;
+    private static final Logger log = LoggerFactory.getLogger(ChatServiceImpl.class);
 
     @Qualifier("taskExecutor")
     private final Executor taskExecutor;
@@ -66,17 +69,40 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     @Transactional
     @TrackProcessing
     public void processDocument(Long documentId) {
+        log.info(">>> ВЛИЗАНЕ в processDocument за ID: {}", documentId);
         ProcessingJob job = processingJobService.findByDocumentId(documentId);
+
+        if (job == null) {
+            log.error("КРИТИЧНА ГРЕШКА: Задачата не е намерена в базата за ID: {}", documentId);
+            return;
+        }
+
         Document document = job.getDocument();
+        log.info("Документът е зареден: {} (MIME: {}). Започване на PARSING...",
+                document.getFilename(), document.getMimeType());
 
         try {
+            // ЕТАП 1: PARSING
+            log.info("Стъпка 1: Обновяване на статус на PARSING...");
             updateJobStage(job, ProcessingJobStage.PARSING);
-            String text = extractTextBasedOnType(document);
-            updateJobStage(job, ProcessingJobStage.INDEXING);
-            processChunks(document, text);
 
+            String text = extractTextBasedOnType(document);
+            log.info("Текстът е извлечен успешно. Дължина на символите: {}",
+                    (text != null ? text.length() : "NULL!"));
+
+            // ЕТАП 2: INDEXING (Векторизация)
+            log.info("Стъпка 2: Обновяване на статус на INDEXING...");
+            updateJobStage(job, ProcessingJobStage.INDEXING);
+
+            processChunks(document, text);
+            log.info("Векторизацията и записът в PGVector приключиха.");
+
+            // ЕТАП 3: COMPLETED
+            log.info("Стъпка 3: Обновяване на статус на COMPLETED.");
             updateJobStage(job, ProcessingJobStage.COMPLETED);
+
         } catch (Exception e) {
+            log.error("!!! ГРЕШКА ПРИ ОБРАБОТКА на документ " + documentId + ": " + e.getMessage(), e);
             handleProcessingFailure(job, e);
         }
     }
