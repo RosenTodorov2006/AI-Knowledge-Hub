@@ -8,18 +8,29 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # 1. Влизане в Azure
       - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and Push
+      # 2. Влизане в твоя Container Registry (ACR)
+      - name: Log in to ACR
         run: |
-          # Използваме точното име: aiknowledgeacr
-          az acr build --registry aiknowledgeacr --image ai-knowledge-hub:latest .
+          az acr login --name aiknowledgeacr
 
-      - name: Deploy
+      # 3. Компилиране на образа директно в GitHub
+      - name: Build Docker image
         run: |
-          # Тук също обновяваме името на регистъра
+          docker build -t aiknowledgeacr.azurecr.io/ai-knowledge-hub:latest .
+
+      # 4. Изпращане на готовия образ към Azure
+      - name: Push image to ACR
+        run: |
+          docker push aiknowledgeacr.azurecr.io/ai-knowledge-hub:latest
+
+      # 5. Обновяване на Container App с новия образ
+      - name: Deploy to Container App
+        run: |
           az containerapp update --name ai-knowledge-app --resource-group ai-hub-rg \
             --image aiknowledgeacr.azurecr.io/ai-knowledge-hub:latest
