@@ -69,7 +69,8 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     @Transactional
     @TrackProcessing
     public void processDocument(Long documentId) {
-        log.info(">>> ВЛИЗАНЕ в processDocument за ID: {}", documentId);
+        log.info(">>> КРИТИЧЕН ТЕСТ: Нишката влезе в processDocument за ID: {}", documentId);
+
         ProcessingJob job = processingJobService.findByDocumentId(documentId);
 
         if (job == null) {
@@ -78,28 +79,35 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
         }
 
         Document document = job.getDocument();
+        if (document == null) {
+            log.error("КРИТИЧНА ГРЕШКА: Документът е null за задача ID: {}", job.getId());
+            return;
+        }
+
         log.info("Документът е зареден: {} (MIME: {}). Започване на PARSING...",
                 document.getFilename(), document.getMimeType());
 
         try {
-            // ЕТАП 1: PARSING
             log.info("Стъпка 1: Обновяване на статус на PARSING...");
             updateJobStage(job, ProcessingJobStage.PARSING);
 
             String text = extractTextBasedOnType(document);
-            log.info("Текстът е извлечен успешно. Дължина на символите: {}",
-                    (text != null ? text.length() : "NULL!"));
 
-            // ЕТАП 2: INDEXING (Векторизация)
+            if (text == null || text.trim().isEmpty()) {
+                throw new RuntimeException("Извлеченият текст е празен или NULL! Провери метода extractTextBasedOnType.");
+            }
+
+            log.info("Текстът е извлечен успешно. Дължина на символите: {}", text.length());
+
             log.info("Стъпка 2: Обновяване на статус на INDEXING...");
             updateJobStage(job, ProcessingJobStage.INDEXING);
 
             processChunks(document, text);
             log.info("Векторизацията и записът в PGVector приключиха.");
 
-            // ЕТАП 3: COMPLETED
             log.info("Стъпка 3: Обновяване на статус на COMPLETED.");
             updateJobStage(job, ProcessingJobStage.COMPLETED);
+            log.info(">>> УСПЕШЕН КРАЙ на обработката за документ ID: {}", documentId);
 
         } catch (Exception e) {
             log.error("!!! ГРЕШКА ПРИ ОБРАБОТКА на документ " + documentId + ": " + e.getMessage(), e);
