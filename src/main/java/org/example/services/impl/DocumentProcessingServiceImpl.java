@@ -131,19 +131,32 @@ public class DocumentProcessingServiceImpl implements DocumentProcessingService 
     }
 
     private void processChunks(Document document, String text) {
+        log.info(">>> [INDEXING] Начало на раздробяване за файл: {}", document.getFilename());
+
         List<String> semanticChunks = TextUtils.prepareSemanticChunks(text, CHUNK_CHARACTER_LIMIT);
+        log.info(">>> [INDEXING] Текстът е разделен на {} парчета. Започвам ПОСЛЕДОВАТЕЛНА векторизация...", semanticChunks.size());
 
-        List<CompletableFuture<DocumentChunk>> futures = semanticChunks.stream()
-                .map(content -> CompletableFuture.supplyAsync(
-                        () -> createChunkWithEmbedding(document.getId(), content),
-                        taskExecutor))
-                .toList();
+        List<DocumentChunk> allChunks = new ArrayList<>();
+        int count = 0;
 
-        List<DocumentChunk> allChunks = futures.stream()
-                .map(CompletableFuture::join)
-                .toList();
+        for (String content : semanticChunks) {
+            count++;
+            log.info(">>> [INDEXING] Обработка на парче {}/{} (дължина: {} символа)",
+                    count, semanticChunks.size(), content.length());
 
+            try {
+                DocumentChunk chunk = createChunkWithEmbedding(document.getId(), content);
+                allChunks.add(chunk);
+                log.info(">>> [INDEXING] Парче {} е успешно векторизирано.", count);
+            } catch (Exception e) {
+                log.error("!!! [INDEXING] КРИТИЧНА ГРЕШКА при парче {}: {}", count, e.getMessage());
+                throw new RuntimeException("Грешка при векторизация на парче " + count, e);
+            }
+        }
+
+        log.info(">>> [INDEXING] Всички {} парчета са готови. Запис в базата данни (document_chunks)...", allChunks.size());
         documentChunkRepository.saveAll(allChunks);
+        log.info(">>> [INDEXING] УСПЕШЕН ЗАПИС в базата данни.");
     }
 
     private DocumentChunk createChunkWithEmbedding(Long docId, String content) {
