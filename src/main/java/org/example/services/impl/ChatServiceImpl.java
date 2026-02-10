@@ -1,5 +1,6 @@
 package org.example.services.impl;
 
+import groovy.util.logging.Log;
 import jakarta.transaction.Transactional;
 import org.example.clients.OpenAiClient;
 import org.example.models.dtos.exportDtos.ChatResponseDto;
@@ -13,6 +14,7 @@ import org.example.services.*;
 import org.example.utils.TextUtils;
 import org.example.utils.VectorUtils;
 import org.modelmapper.ModelMapper;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -28,6 +30,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
 
 
@@ -47,6 +51,7 @@ public class ChatServiceImpl implements ChatService {
     private final DocumentService documentService;
     private final OpenAiClient openAiClient;
     private final MessageSource messageSource;
+    private static final Logger log = LoggerFactory.getLogger(ChatServiceImpl.class);
 
     public ChatServiceImpl(ChatRepository chatRepository,
                            DocumentProcessingService documentProcessingService,
@@ -154,16 +159,27 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void triggerAsyncProcessing(Long documentId) {
+        log.info("Иницииране на асинхронна обработка за документ ID: {}", documentId);
+
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
+                    log.info("Транзакцията е комитната. Стартиране на фонова нишка за ID: {}", documentId);
+
                     CompletableFuture.runAsync(() -> {
-                        documentProcessingService.processDocument(documentId);
-                    }, CompletableFuture.delayedExecutor(500, TimeUnit.MILLISECONDS));
+                        try {
+                            // Увеличаваме леко закъснението, за да сме сигурни, че Azure DB е отразила записа
+                            documentProcessingService.processDocument(documentId);
+                            log.info("Методът processDocument е извикан успешно за ID: {}", documentId);
+                        } catch (Exception e) {
+                            log.error("КРИТИЧНА ГРЕШКА във фоновата нишка за документ " + documentId, e);
+                        }
+                    }, CompletableFuture.delayedExecutor(1500, TimeUnit.MILLISECONDS));
                 }
             });
         } else {
+            log.warn("Няма активна транзакция. Стартиране на директна обработка.");
             documentProcessingService.processDocument(documentId);
         }
     }
