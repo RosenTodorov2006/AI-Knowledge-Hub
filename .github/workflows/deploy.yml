@@ -8,28 +8,42 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # 1. Влизане в Azure
+      # 1. Инсталиране на Java 17 (за да можем да компилираме)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      # 2. Компилиране на проекта (Build)
+      - name: Build with Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew bootJar
+
+      # 3. Влизане в Azure
       - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 2. Влизане в твоя Container Registry (ACR)
+      # 4. Влизане в ACR
       - name: Log in to ACR
         run: |
           az acr login --name aiknowledgeacr
 
-      # 3. Компилиране на образа директно в GitHub
+      # 5. Build на Docker образа (сега вече ще намери .jar файла)
       - name: Build Docker image
         run: |
           docker build -t aiknowledgeacr.azurecr.io/ai-knowledge-hub:latest .
 
-      # 4. Изпращане на готовия образ към Azure
+      # 6. Push към Azure
       - name: Push image to ACR
         run: |
           docker push aiknowledgeacr.azurecr.io/ai-knowledge-hub:latest
 
-      # 5. Обновяване на Container App с новия образ
+      # 7. Обновяване на приложението
       - name: Deploy to Container App
         run: |
           az containerapp update --name ai-knowledge-app --resource-group ai-hub-rg \
