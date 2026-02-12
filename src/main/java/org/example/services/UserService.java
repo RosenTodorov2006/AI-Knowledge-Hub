@@ -7,6 +7,9 @@ import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.models.entities.UserEntity;
 import org.springframework.security.core.userdetails.User;
 
+import java.util.List;
+import java.util.Map;
+
 public interface UserService {
     void register(RegisterSeedDto registerSeedDto);
     boolean isEmailUnique(String email);
@@ -20,4 +23,5 @@ public interface UserService {
     UserViewDto getUserViewByEmail(String email);
     ChangeProfileDto getChangeProfileDto(String email);
     UserEntity findUserByEmail(String gmail);
+    List<UserEntity> findAllUsers();
 }
