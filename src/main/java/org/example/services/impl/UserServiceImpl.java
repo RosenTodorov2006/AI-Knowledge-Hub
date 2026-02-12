@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -115,5 +116,10 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(gmail)
                 .orElseThrow(() -> new RuntimeException(
                         messageSource.getMessage(MSG_KEY_NOT_FOUND, null, LocaleContextHolder.getLocale())));
+    }
+
+    @Override
+    public List<UserEntity> findAllUsers() {
+        return this.userRepository.findAll();
     }
 }

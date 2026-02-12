@@ -47,6 +47,7 @@ dependencies {
     implementation 'ai.djl.huggingface:tokenizers:0.26.0'
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
     implementation 'org.apache.poi:poi-scratchpad:5.2.3'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     // Махаме ONNX, за да не стават конфликти
     configurations.all {
