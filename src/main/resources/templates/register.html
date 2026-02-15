@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/auth :: auth-head(#{register.title})}"></head>
 <style>
     .error-block {
         display: inline-flex;
@@ -27,8 +28,18 @@
         background-size: 16px 16px;
         padding-right: 35px;
     }
+    .success-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
 </style>
-<head th:replace="~{fragments/auth :: auth-head(#{register.title})}"></head>
 <body class="auth-page">
 
 <div class="auth-wrapper">
@@ -43,7 +54,16 @@
                     <p class="text-muted small" th:text="#{register.subtitle}">Intelligent document vectorization and search</p>
                 </div>
 
-                <form class="auth-form" th:action="@{/register}" th:method="POST" th:object="${registerSeedDto}">
+                <div th:if="${registrationSuccess}" class="text-center py-4">
+                    <div class="success-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <h4 class="fw-bold mb-2">Check your email!</h4>
+                    <p class="text-muted mb-4">We've sent a verification link to your inbox. Please click it to activate your account and start using AI Knowledge Hub.</p>
+                    <a th:href="@{/login}" class="btn btn-dark px-4 fw-bold shadow-sm">Go to Login</a>
+                </div>
+
+                <form th:unless="${registrationSuccess}" class="auth-form" th:action="@{/register}" th:method="POST" th:object="${registerSeedDto}">
 
                     <div th:if="${#fields.hasErrors('global')}" class="alert alert-danger py-1 px-2 small mb-2">
                         <p class="m-0 extra-small" th:each="err : ${#fields.errors('global')}" th:text="${err}"></p>
@@ -105,14 +125,14 @@
                     </div>
 
                     <button type="submit" class="btn btn-dark w-100 py-2 fw-bold shadow-sm" th:text="#{register.button}">Sign Up</button>
-                </form>
 
-                <div class="text-center mt-2">
-                    <p class="small text-muted mb-0">
-                        <span th:text="#{register.footer.exists}">Already have an account?</span>
-                        <a th:href="@{/login}" class="text-dark fw-bold text-decoration-none" th:text="#{register.footer.login}">Login</a>
-                    </p>
-                </div>
+                    <div class="text-center mt-2">
+                        <p class="small text-muted mb-0">
+                            <span th:text="#{register.footer.exists}">Already have an account?</span>
+                            <a th:href="@{/login}" class="text-dark fw-bold text-decoration-none" th:text="#{register.footer.login}">Login</a>
+                        </p>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

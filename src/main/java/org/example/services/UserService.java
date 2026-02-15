@@ -24,4 +24,5 @@ public interface UserService {
     ChangeProfileDto getChangeProfileDto(String email);
     UserEntity findUserByEmail(String gmail);
     List<UserEntity> findAllUsers();
+    boolean verifyUser(String token);
 }

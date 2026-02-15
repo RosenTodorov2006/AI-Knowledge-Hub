@@ -22,8 +22,10 @@ public class UserEntity extends BaseEntity{
     private LocalDateTime createdAt;
     @Column(name = "full_name")
     private String fullName;
+    @Column(name = "verification_token")
+    private String verificationToken;
 
-    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt, String fullName) {
+    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt, String fullName, String verificationToken) {
         this.email = email;
         this.password = password;
         this.username = username;
@@ -31,6 +33,7 @@ public class UserEntity extends BaseEntity{
         this.active = active;
         this.createdAt = createdAt;
         this.fullName = fullName;
+        this.verificationToken = verificationToken;
     }
 
     public UserEntity() {
@@ -91,4 +94,13 @@ public class UserEntity extends BaseEntity{
     public void setFullName(String fullName) {
         this.fullName = fullName;
     }
+
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
+    }
+
 }
