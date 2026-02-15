@@ -65,21 +65,17 @@ public class SettingsController {
                              BindingResult bindingResult,
                              RedirectAttributes redirectAttributes,
                              Principal principal) {
-
         if (bindingResult.hasErrors()) {
             handleBindingErrors(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
             return "redirect:/settings";
         }
-
         boolean success = userService.changeProfileInfo(changeProfileDto, principal.getName());
-
         if (!success) {
             redirectAttributes.addFlashAttribute(ATTR_CHANGE_PROFILE, changeProfileDto);
             redirectAttributes.addFlashAttribute(ATTR_INVALID_PROFILE, true);
             redirectAttributes.addFlashAttribute("profileError", "Invalid password.");
             return "redirect:/settings";
         }
-
         String currentEmail = principal.getName();
         if (!currentEmail.equals(changeProfileDto.getEmail())) {
             updateSecurityContext(changeProfileDto.getEmail());

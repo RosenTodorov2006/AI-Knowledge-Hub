@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.example.models.dtos.importDtos.LoginSeedDto;
 import org.example.models.dtos.importDtos.RegisterSeedDto;
+import org.example.models.dtos.importDtos.UserReactivateDto;
 import org.example.services.UserService;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -71,11 +72,38 @@ public class UserController {
             return "login";
         }
     }
+    @PostMapping("/users/reactivate")
+    public String reactivate(@Valid UserReactivateDto userReactivateDto,
+                             BindingResult bindingResult,
+                             RedirectAttributes redirectAttributes) {
+
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("userReactivateDto", userReactivateDto);
+            redirectAttributes.addFlashAttribute(BINDING_RESULT_PREFIX + "userReactivateDto", bindingResult);
+            redirectAttributes.addFlashAttribute("showReactivate", true);
+            return "redirect:/login";
+        }
+
+        boolean isReactivated = userService.reactivateAccount(userReactivateDto.getEmail(), userReactivateDto.getPassword());
+
+        if (isReactivated) {
+            redirectAttributes.addFlashAttribute("success", "Account reactivated! You can now log in.");
+        } else {
+            redirectAttributes.addFlashAttribute("userReactivateDto", userReactivateDto);
+            redirectAttributes.addFlashAttribute("reactivateError", "Invalid email or password.");
+            redirectAttributes.addFlashAttribute("showReactivate", true);
+        }
+
+        return "redirect:/login";
+    }
 
     @GetMapping("/login")
     public String login(Model model) {
         if (!model.containsAttribute(ATTR_LOGIN)) {
             model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
+        }
+        if (!model.containsAttribute("userReactivateDto")) {
+            model.addAttribute("userReactivateDto", new UserReactivateDto());
         }
         model.addAttribute(ATTR_INVALID_DATA, false);
         return "login";

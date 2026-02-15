@@ -134,7 +134,21 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userEntity);
         return true;
     }
+    @Override
+    @Transactional
+    public boolean reactivateAccount(String email, String password) {
+        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
 
+        if (userOptional.isPresent()) {
+            UserEntity user = userOptional.get();
+            if (!user.isActive() && passwordEncoder.matches(password, user.getPassword())) {
+                user.setActive(true);
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+    }
     @Override
     public UserViewDto getUserViewByEmail(String email) {
         return this.userRepository.findByEmail(email)
@@ -172,4 +186,5 @@ public class UserServiceImpl implements UserService {
     public List<UserEntity> findAllUsers() {
         return this.userRepository.findAll();
     }
+
 }

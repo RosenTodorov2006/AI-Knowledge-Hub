@@ -24,4 +24,5 @@ public interface UserService {
     List<UserEntity> findAllUsers();
     boolean verifyUser(String token);
     boolean deleteUser(String email, String password);
+    boolean reactivateAccount(String email, String password);
 }
