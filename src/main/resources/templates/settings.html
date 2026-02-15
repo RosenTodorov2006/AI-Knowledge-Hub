@@ -23,7 +23,6 @@
 
 <body>
 <div class="dashboard-wrapper">
-
     <aside th:replace="~{fragments/layout :: sidebar('settings', ${currentUser})}"></aside>
 
     <main class="main-content settings-content">
@@ -48,16 +47,21 @@
                     <form class="settings-form" th:action="@{/settings/changeInfo}" th:method="post" th:object="${changeProfileDto}">
                         <div class="form-group">
                             <label for="fullName" class="form-label" th:text="#{settings.profile.fullname}">Full Name</label>
-                            <input type="text" id="fullName" th:field="*{fullName}" class="form-input" required
-                                   th:classappend="${#fields.hasErrors('fullName')} ? 'input-error'">
+                            <input type="text" id="fullName" th:field="*{fullName}" class="form-input" required>
                             <small th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="error-block"></small>
                         </div>
 
                         <div class="form-group">
                             <label for="email" class="form-label" th:text="#{settings.profile.email}">Email Address</label>
-                            <input type="email" id="email" th:field="*{email}" class="form-input" required
-                                   th:classappend="${#fields.hasErrors('email')} ? 'input-error'">
+                            <input type="email" id="email" th:field="*{email}" class="form-input" required>
                             <small th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-block"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Current password (for confirmation)</label>
+                            <input type="password" th:field="*{currentPassword}" class="form-input" required
+                                   th:classappend="${profileError} ? 'input-error'">
+                            <small th:if="${profileError}" class="error-block" th:text="${profileError}"></small>
                         </div>
 
                         <div class="form-actions">
@@ -80,21 +84,22 @@
                 <div class="card-body">
                     <form class="settings-form" th:action="@{/settings/changeUserPassword}" th:method="post" th:object="${changeUserPasswordDto}">
                         <div class="form-group">
+                            <label class="form-label">Current password (for confirmation)</label>
+                            <input type="password" th:field="*{currentPassword}" class="form-input" required
+                                   th:classappend="${passwordError} ? 'input-error'">
+                            <small th:if="${passwordError}" class="error-block" th:text="${passwordError}"></small>
+                        </div>
+
+                        <div class="form-group">
                             <label for="newPassword" class="form-label" th:text="#{settings.security.new_password}">New Password</label>
-                            <input type="password" id="newPassword" th:field="*{password}" class="form-input" required
-                                   th:classappend="${#fields.hasErrors('password')} ? 'input-error'">
+                            <input type="password" id="newPassword" th:field="*{password}" class="form-input" required>
                             <small class="error-block" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></small>
                         </div>
 
                         <div class="form-group">
                             <label for="confirmPassword" class="form-label" th:text="#{settings.security.confirm_password}">Confirm Password</label>
-                            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" class="form-input" required
-                                   th:classappend="${#fields.hasErrors('confirmPassword') || #fields.hasGlobalErrors()} ? 'input-error'">
-                            <small class="error-block" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></small>
-                        </div>
-
-                        <div th:if="${#fields.hasGlobalErrors()}">
-                            <small class="error-block" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></small>
+                            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" class="form-input" required>
+                            <small class="error-block" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></small>
                         </div>
 
                         <div class="form-actions">
@@ -119,7 +124,13 @@
                             <strong th:text="#{settings.danger.deactivate_label}">Deactivate Account:</strong>
                             <span th:text="#{settings.danger.deactivate_text}">Your data will be preserved but you will be logged out immediately.</span>
                         </p>
-                        <form th:action="@{/settings}" th:method="delete">
+                        <form th:action="@{/settings}" th:method="delete" th:object="${userDeactivateDto}">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Current password (for confirmation)</label>
+                                <input type="password" th:field="*{currentPassword}" class="form-input border-danger" required
+                                       th:classappend="${deactivateError} ? 'input-error'">
+                                <small th:if="${deactivateError}" class="error-block" th:text="${deactivateError}"></small>
+                            </div>
                             <button type="submit" class="btn-danger" th:text="#{settings.danger.deactivate_button}"
                                     th:onclick="|return confirm('#{settings.danger.confirm_msg}')|">
                                 Deactivate My Account

@@ -93,24 +93,46 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
+    public boolean changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
+
+        if (!passwordEncoder.matches(changeProfileDto.getCurrentPassword(), userEntity.getPassword())) {
+
+            return false;
+        }
+
         userEntity.setEmail(changeProfileDto.getEmail());
         userEntity.setFullName(changeProfileDto.getFullName());
+        userRepository.save(userEntity);
+        return true;
     }
 
     @Override
     @Transactional
-    public void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
+    public boolean changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
+
+        if (!passwordEncoder.matches(changeUserPasswordDto.getCurrentPassword(), userEntity.getPassword())) {
+            return false;
+        }
+
         userEntity.setPassword(passwordEncoder.encode(changeUserPasswordDto.getPassword()));
+        userRepository.save(userEntity);
+        return true;
     }
 
     @Override
     @Transactional
-    public void deleteUser(String email) {
+    public boolean deleteUser(String email, String password) {
         UserEntity userEntity = findByEmailOrThrow(email);
+
+        if (!passwordEncoder.matches(password, userEntity.getPassword())) {
+            return false;
+        }
+
         userEntity.setActive(false);
+        userRepository.save(userEntity);
+        return true;
     }
 
     @Override

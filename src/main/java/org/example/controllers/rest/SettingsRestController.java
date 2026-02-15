@@ -65,16 +65,16 @@ public class SettingsRestController {
         }
     }
 
-    @DeleteMapping
-    public ResponseEntity<Object> delete(Principal principal) {
-        try {
-            userService.deleteUser(principal.getName());
-            String msg = messageSource.getMessage(MSG_KEY_DELETED, null, LocaleContextHolder.getLocale());
-            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, msg));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
-        }
-    }
+//    @DeleteMapping
+//    public ResponseEntity<Object> delete(Principal principal) {
+//        try {
+//            userService.deleteUser(principal.getName());
+//            String msg = messageSource.getMessage(MSG_KEY_DELETED, null, LocaleContextHolder.getLocale());
+//            return ResponseEntity.ok(Map.of(JSON_KEY_MESSAGE, msg));
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of(JSON_KEY_ERROR, e.getMessage()));
+//        }
+//    }
 
     private Map<String, List<String>> extractErrors(BindingResult bindingResult) {
         List<String> errors = bindingResult.getFieldErrors()
