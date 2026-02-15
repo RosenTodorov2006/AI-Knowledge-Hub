@@ -2,6 +2,7 @@ package org.example.schedulers;
 
 import org.example.repositories.UserRepository;
 import org.example.services.EmailService;
+import org.example.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,14 +26,26 @@ public class AppTestingReminderTask {
                     "Best regards,\nThe AI Knowledge Hub Team";
 
     private final EmailService emailService;
+    private final UserService userService;
 
-    public AppTestingReminderTask(EmailService emailService) {
+    public AppTestingReminderTask(EmailService emailService, UserService userService) {
         this.emailService = emailService;
+        this.userService = userService;
     }
 
     @Scheduled(fixedRate = 86400000)
     public void executeDailyTestingReminder() {
-        logger.info("Starting daily user reminder task via EmailService...");
-        emailService.sendBulkReminder(REMINDER_SUBJECT, REMINDER_BODY_TEMPLATE, APP_LINK);
+        logger.info("Starting daily user reminder task...");
+
+        userService.findAllUsers().forEach(user -> {
+            try {
+                String name = user.getFullName() != null ? user.getFullName() : user.getUsername();
+                String body = String.format(REMINDER_BODY_TEMPLATE, name, APP_LINK);
+
+                emailService.sendSimpleEmail(user.getEmail(), REMINDER_SUBJECT, body);
+            } catch (Exception e) {
+                logger.error("Failed to send reminder to {}: {}", user.getEmail(), e.getMessage());
+            }
+        });
     }
 }

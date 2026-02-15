@@ -12,10 +12,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -25,6 +22,7 @@ import java.util.Locale;
 public class UserController {
     public static final String ATTR_REGISTER = "registerSeedDto";
     public static final String ATTR_LOGIN = "loginSeedDto";
+    private static final String ATTR_REGISTRATION_SUCCESS = "registrationSuccess";
     public static final String ATTR_INVALID_DATA = "invalidData";
     public static final String ATTR_ERROR_MSG = "errorMessage";
     public static final String BINDING_RESULT_PREFIX = "org.springframework.validation.BindingResult.";
@@ -44,21 +42,34 @@ public class UserController {
         if (!model.containsAttribute(ATTR_REGISTER)) {
             model.addAttribute(ATTR_REGISTER, new RegisterSeedDto());
         }
+        if(!model.containsAttribute(ATTR_REGISTRATION_SUCCESS)){
+            model.addAttribute(ATTR_REGISTRATION_SUCCESS, false);
+        }
         return "register";
     }
-
     @PostMapping("/register")
     public String registerAndSaveInDataBase(@Valid RegisterSeedDto registerSeedDto,
                                             BindingResult bindingResult,
-                                            RedirectAttributes redirectAttributes) {
+                                            Model model) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute(BINDING_RESULT_PREFIX + ATTR_REGISTER, bindingResult);
-            redirectAttributes.addFlashAttribute(ATTR_REGISTER, registerSeedDto);
-            return "redirect:/register";
+            return "register";
         }
 
         this.userService.register(registerSeedDto);
-        return "redirect:/login";
+        model.addAttribute("registrationSuccess", true);
+        return "register";
+    }
+
+    @GetMapping("/users/verify")
+    public String verifyAccount(@RequestParam("token") String token, Model model) {
+        boolean isVerified = userService.verifyUser(token);
+
+        if (isVerified) {
+            return "verification-success";
+        } else {
+            model.addAttribute("error", "Invalid or expired verification token.");
+            return "login";
+        }
     }
 
     @GetMapping("/login")

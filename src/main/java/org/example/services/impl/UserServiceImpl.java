@@ -8,6 +8,7 @@ import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.models.entities.UserEntity;
 import org.example.models.entities.enums.ApplicationRole;
 import org.example.repositories.UserRepository;
+import org.example.services.EmailService;
 import org.example.services.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.MessageSource;
@@ -21,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -29,28 +31,54 @@ public class UserServiceImpl implements UserService {
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final MessageSource messageSource;
+    private final EmailService emailService;
 
     public UserServiceImpl(UserRepository userRepository,
                            ModelMapper modelMapper,
-                           PasswordEncoder passwordEncoder, MessageSource messageSource) {
+                           PasswordEncoder passwordEncoder, MessageSource messageSource, EmailService emailService) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
         this.messageSource = messageSource;
+        this.emailService = emailService;
     }
 
     @Override
     public void register(RegisterSeedDto registerSeedDto) {
         UserEntity user = this.modelMapper.map(registerSeedDto, UserEntity.class);
-
         user.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
-
         user.setRole(this.userRepository.count() == 0 ? ApplicationRole.ADMIN : ApplicationRole.USER);
 
-        user.setActive(true);
+        user.setActive(false);
         user.setCreatedAt(LocalDateTime.now());
 
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
+
         this.userRepository.save(user);
+
+        String confirmationLink = "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io/users/verify?token=" + token;
+
+        String emailBody = String.format(
+                "Hello %s,\n\nPlease verify your account by clicking the link below:\n%s",
+                user.getUsername(), confirmationLink
+        );
+
+        emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", emailBody);
+    }
+
+    @Override
+    @Transactional
+    public boolean verifyUser(String token) {
+        Optional<UserEntity> userOptional = userRepository.findByVerificationToken(token);
+        if (userOptional.isPresent()) {
+            UserEntity user = userOptional.get();
+            user.setActive(true);
+            user.setVerificationToken(null);
+            userRepository.save(user);
+            return true;
+        }
+        return false;
     }
 
     @Override
