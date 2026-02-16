@@ -120,6 +120,17 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userEntity);
         return true;
     }
+    @Override
+    @Transactional
+    public void deactivateInactiveUsers(int months) {
+        LocalDateTime threshold = LocalDateTime.now().minusMonths(months);
+        List<UserEntity> inactiveUsers = userRepository.findInactiveUsers(threshold);
+
+        for (UserEntity user : inactiveUsers) {
+            user.setActive(false);
+            userRepository.save(user);
+        }
+    }
 
     @Override
     @Transactional

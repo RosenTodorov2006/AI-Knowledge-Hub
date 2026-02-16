@@ -25,4 +25,5 @@ public interface UserService {
     boolean verifyUser(String token);
     boolean deleteUser(String email, String password);
     boolean reactivateAccount(String email, String password);
+    void deactivateInactiveUsers(int months);
 }
