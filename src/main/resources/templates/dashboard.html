@@ -4,7 +4,6 @@
 <head th:replace="~{fragments/head :: head('Dashboard', ~{})}"></head>
 
 <style>
-    /* Разкрасяване на съобщенията (Alerts) */
     .alert-custom {
         border: none;
         border-radius: 12px;
@@ -25,9 +24,51 @@
         border-left: 5px solid #4caf50;
     }
 
-    /* Стилизиране на бутона за триене */
+    /* Стил за търсачката */
+    .search-section {
+        margin: 1rem 1.5rem 2rem;
+    }
+
+    .search-input-group {
+        position: relative;
+        max-width: 400px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 12px 12px 40px;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #5D5DFE;
+        box-shadow: 0 0 0 3px rgba(93, 93, 254, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9e9e9e;
+    }
+
+    #no-chats-found {
+        display: none;
+        text-align: center;
+        padding: 3rem;
+        background: #f9f9f9;
+        border-radius: 15px;
+        margin: 1rem 1.5rem;
+    }
+
     .btn-delete-chat {
-        color: #ef5350; /* Приглушено червено */
+        color: #ef5350;
         transition: all 0.2s ease;
         border-radius: 6px;
         display: flex;
@@ -37,12 +78,11 @@
     }
 
     .btn-delete-chat:hover {
-        color: #d32f2f; /* Тъмно червено при hover */
-        background-color: #ffebee; /* Светло червен фон при hover */
+        color: #d32f2f;
+        background-color: #ffebee;
         transform: scale(1.15);
     }
 
-    /* Рязане на името на файла за по-добър дизайн */
     .doc-filename {
         max-width: 160px;
         white-space: nowrap;
@@ -78,6 +118,16 @@
             </button>
         </header>
 
+        <div class="search-section">
+            <div class="search-input-group">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="chat-search" class="search-input" placeholder="Search by filename or chat content...">
+            </div>
+        </div>
+
         <div th:if="${success}" class="alert-custom alert-success-custom">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -94,7 +144,12 @@
             <p th:text="#{dashboard.banner}">One File = One Chat: Each document gets its own dedicated conversation.</p>
         </div>
 
-        <div class="documents-grid">
+        <div id="no-chats-found">
+            <h3 style="color: #666; margin-bottom: 0.5rem;">No chats matches found</h3>
+            <p style="color: #999;">Try searching for a different keyword or filename.</p>
+        </div>
+
+        <div class="documents-grid" id="chats-grid">
             <th:block th:each="chat : ${allChats}">
                 <div th:if="${chat.documentStatus.name() != 'FAILED'}"
                      class="doc-card"
@@ -138,7 +193,7 @@
                 </div>
             </th:block>
 
-            <div class="doc-card start-new-card" onclick="showUploadModal()" style="cursor: pointer;">
+            <div class="doc-card start-new-card" id="upload-card" onclick="showUploadModal()" style="cursor: pointer;">
                 <div class="start-new-content">
                     <svg class="plus-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M24 12V36M12 24H36" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round"/>
@@ -152,10 +207,43 @@
 </div>
 
 <div th:replace="~{fragments/modals :: upload-modal}"></div>
-
 <button th:replace="~{fragments/layout :: mobile-toggle}"></button>
-
 <th:block th:replace="~{fragments/scripts :: common-scripts}"></th:block>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('chat-search');
+        const chatsGrid = document.getElementById('chats-grid');
+        const uploadCard = document.getElementById('upload-card');
+        const noResults = document.getElementById('no-chats-found');
+        const chatCards = document.querySelectorAll('.doc-card:not(.start-new-card)');
+
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            chatCards.forEach(card => {
+                const filename = card.querySelector('.doc-filename').textContent.toLowerCase();
+                const preview = card.querySelector('.doc-preview').textContent.toLowerCase();
+
+                if (filename.includes(query) || preview.includes(query)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0 && query !== "") {
+                noResults.style.display = 'block';
+                uploadCard.style.display = 'none';
+            } else {
+                noResults.style.display = 'none';
+                uploadCard.style.display = 'flex';
+            }
+        });
+    });
+</script>
 
 </body>
 </html>
