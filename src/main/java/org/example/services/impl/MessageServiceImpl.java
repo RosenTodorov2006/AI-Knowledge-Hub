@@ -40,6 +40,11 @@ public class MessageServiceImpl implements MessageService {
     public void saveMessageSources(Message message, List<ChunkSearchResult> searchResults) {
         searchResults.forEach(res -> messageContextSourceService.saveSource(message, res));
     }
+    @Override
+    @Transactional
+    public void deleteMessagesByChatId(Long chatId) {
+        messageRepository.deleteAllByChatId(chatId);
+    }
 
     private Message createMessage(Chat chat, String content, MessageRole role) {
         Message message = new Message();

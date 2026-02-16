@@ -143,6 +143,20 @@ public class ChatServiceImpl implements ChatService {
         return chatRepository.findAllByUserEntityId(userId);
     }
 
+    @Override
+    @Transactional
+    public void deleteChat(Long chatId, String userEmail) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat not found"));
+
+        if (!chat.getUserEntity().getEmail().equals(userEmail)) {
+            throw new IllegalStateException("Unauthorized to delete this chat");
+        }
+
+        messageService.deleteMessagesByChatId(chatId);
+
+        chatRepository.delete(chat);
+    }
 
     private String getOrInitThread(Chat chat) {
         if (chat.getOpenAiThreadId() == null) {

@@ -3,6 +3,60 @@
 
 <head th:replace="~{fragments/head :: head('Dashboard', ~{})}"></head>
 
+<style>
+    /* Разкрасяване на съобщенията (Alerts) */
+    .alert-custom {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.4s ease-out;
+    }
+
+    .alert-success-custom {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border-left: 5px solid #4caf50;
+    }
+
+    /* Стилизиране на бутона за триене */
+    .btn-delete-chat {
+        color: #ef5350; /* Приглушено червено */
+        transition: all 0.2s ease;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px !important;
+    }
+
+    .btn-delete-chat:hover {
+        color: #d32f2f; /* Тъмно червено при hover */
+        background-color: #ffebee; /* Светло червен фон при hover */
+        transform: scale(1.15);
+    }
+
+    /* Рязане на името на файла за по-добър дизайн */
+    .doc-filename {
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>
+
 <body>
 <div class="dashboard-wrapper">
 
@@ -13,7 +67,8 @@
             <div class="header-left">
                 <h1 class="page-title" th:text="#{dashboard.title}">My Document Chats</h1>
                 <p class="page-subtitle"
-                   th:text="#{dashboard.subtitle(${allChats.?[documentStatus.name() != 'FAILED'].size()})}">0 documents</p>
+                   th:with="activeCount=${allChats?.?[documentStatus.toString() != 'FAILED']?.size()}"
+                   th:text="#{dashboard.subtitle(${activeCount})}">0 documents</p>
             </div>
             <button class="upload-btn" onclick="showUploadModal()">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -22,6 +77,14 @@
                 <span th:text="#{dashboard.button.upload}">Upload New File</span>
             </button>
         </header>
+
+        <div th:if="${success}" class="alert-custom alert-success-custom">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span th:text="${success}">Success message content</span>
+        </div>
 
         <div class="info-banner">
             <svg class="info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,19 +99,36 @@
                 <div th:if="${chat.documentStatus.name() != 'FAILED'}"
                      class="doc-card"
                      th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
-                     style="cursor: pointer;">
+                     style="cursor: pointer; position: relative;">
 
-                    <div class="doc-card-header">
+                    <div class="doc-card-header d-flex justify-content-between align-items-start">
                         <div class="doc-file-info">
                             <svg class="file-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span class="doc-filename" th:text="${chat.filename}">Filename.pdf</span>
+                            <span class="doc-filename"
+                                  th:text="${#strings.length(chat.filename) > 22 ? #strings.substring(chat.filename, 0, 22) + '...' : chat.filename}">Filename.pdf</span>
                         </div>
 
-                        <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
-                              th:text="${chat.documentStatus}">Ready</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <form th:action="@{'/chats/delete/' + ${chat.chatId}}"
+                                  th:method="POST"
+                                  onclick="event.stopPropagation();"
+                                  onsubmit="return confirm('Сигурни ли сте, че искате да изтриете този чат?');">
+                                <button type="submit" class="btn-delete-chat border-0 bg-transparent" title="Delete Chat">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </form>
+
+                            <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
+                                  th:text="${chat.documentStatus}">Ready</span>
+                        </div>
                     </div>
 
                     <div class="doc-card-body">

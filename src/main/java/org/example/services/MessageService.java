@@ -11,4 +11,5 @@ import java.util.List;
 public interface MessageService {
     Message saveMessage(Chat chat, String content, MessageRole role);
     void saveMessageSources(Message message, List<ChunkSearchResult> searchResults);
+    void deleteMessagesByChatId(Long chatId);
 }
