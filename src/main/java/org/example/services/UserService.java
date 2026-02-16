@@ -15,14 +15,15 @@ public interface UserService {
     boolean isEmailUnique(String email);
     boolean isUsernameUnique(String username);
 
-    void changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
+    boolean changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
 
-    void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email);
-
-    void deleteUser(String email);
+    boolean changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email);
     UserViewDto getUserViewByEmail(String email);
     ChangeProfileDto getChangeProfileDto(String email);
     UserEntity findUserByEmail(String gmail);
     List<UserEntity> findAllUsers();
     boolean verifyUser(String token);
+    boolean deleteUser(String email, String password);
+    boolean reactivateAccount(String email, String password);
+    void deactivateInactiveUsers(int months);
 }

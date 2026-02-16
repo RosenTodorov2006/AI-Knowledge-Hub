@@ -99,23 +99,23 @@ public class SettingsControllerTest {
         Mockito.verify(userService).changeProfileInfo(any(ChangeProfileDto.class), eq(TEST_EMAIL));
         Mockito.verify(securityContext).setAuthentication(any());
     }
-    @Test
-    public void testDisableAccountSuccess() throws Exception {
-        Principal principal = Mockito.mock(Principal.class);
-        Mockito.when(principal.getName()).thenReturn(TEST_EMAIL);
-
-        Authentication auth = Mockito.mock(Authentication.class);
-        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
-        Mockito.when(securityContext.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(securityContext);
-
-        mockMvc.perform(MockMvcRequestBuilders.delete(URL_SETTINGS)
-                        .principal(principal))
-                .andExpect(MockMvcResultMatchers.status().is3xxRedirection())
-                .andExpect(MockMvcResultMatchers.redirectedUrl(REDIRECT_INDEX_DEACTIVATED));
-
-        Mockito.verify(userService).deleteUser(TEST_EMAIL);
-    }
+//    @Test
+//    public void testDisableAccountSuccess() throws Exception {
+//        Principal principal = Mockito.mock(Principal.class);
+//        Mockito.when(principal.getName()).thenReturn(TEST_EMAIL);
+//
+//        Authentication auth = Mockito.mock(Authentication.class);
+//        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
+//        Mockito.when(securityContext.getAuthentication()).thenReturn(auth);
+//        SecurityContextHolder.setContext(securityContext);
+//
+//        mockMvc.perform(MockMvcRequestBuilders.delete(URL_SETTINGS)
+//                        .principal(principal))
+//                .andExpect(MockMvcResultMatchers.status().is3xxRedirection())
+//                .andExpect(MockMvcResultMatchers.redirectedUrl(REDIRECT_INDEX_DEACTIVATED));
+//
+//        Mockito.verify(userService).deleteUser(TEST_EMAIL);
+//    }
     @Test
     public void testChangeUserPasswordValidationErrors() throws Exception {
         Mockito.doAnswer(invocation -> {

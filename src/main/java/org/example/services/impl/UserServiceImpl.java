@@ -93,26 +93,73 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
+    public boolean changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
+
+        if (!passwordEncoder.matches(changeProfileDto.getCurrentPassword(), userEntity.getPassword())) {
+
+            return false;
+        }
+
         userEntity.setEmail(changeProfileDto.getEmail());
         userEntity.setFullName(changeProfileDto.getFullName());
+        userRepository.save(userEntity);
+        return true;
     }
 
     @Override
     @Transactional
-    public void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
+    public boolean changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
+
+        if (!passwordEncoder.matches(changeUserPasswordDto.getCurrentPassword(), userEntity.getPassword())) {
+            return false;
+        }
+
         userEntity.setPassword(passwordEncoder.encode(changeUserPasswordDto.getPassword()));
+        userRepository.save(userEntity);
+        return true;
+    }
+    @Override
+    @Transactional
+    public void deactivateInactiveUsers(int months) {
+        LocalDateTime threshold = LocalDateTime.now().minusMonths(months);
+        List<UserEntity> inactiveUsers = userRepository.findInactiveUsers(threshold);
+
+        for (UserEntity user : inactiveUsers) {
+            user.setActive(false);
+            userRepository.save(user);
+        }
     }
 
     @Override
     @Transactional
-    public void deleteUser(String email) {
+    public boolean deleteUser(String email, String password) {
         UserEntity userEntity = findByEmailOrThrow(email);
-        userEntity.setActive(false);
-    }
 
+        if (!passwordEncoder.matches(password, userEntity.getPassword())) {
+            return false;
+        }
+
+        userEntity.setActive(false);
+        userRepository.save(userEntity);
+        return true;
+    }
+    @Override
+    @Transactional
+    public boolean reactivateAccount(String email, String password) {
+        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            UserEntity user = userOptional.get();
+            if (!user.isActive() && passwordEncoder.matches(password, user.getPassword())) {
+                user.setActive(true);
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+    }
     @Override
     public UserViewDto getUserViewByEmail(String email) {
         return this.userRepository.findByEmail(email)
@@ -150,4 +197,5 @@ public class UserServiceImpl implements UserService {
     public List<UserEntity> findAllUsers() {
         return this.userRepository.findAll();
     }
+
 }

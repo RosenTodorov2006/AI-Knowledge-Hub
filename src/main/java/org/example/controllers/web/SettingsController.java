@@ -7,6 +7,7 @@ import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.models.dtos.importDtos.ChangeProfileDto;
 import org.example.models.dtos.importDtos.ChangeUserPasswordDto;
 import org.example.models.dtos.importDtos.RegisterSeedDto;
+import org.example.models.dtos.importDtos.UserDeactivateDto;
 import org.example.models.entities.UserEntity;
 import org.example.services.UserService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -45,6 +46,14 @@ public class SettingsController {
             model.addAttribute(ATTR_CHANGE_PROFILE, userService.getChangeProfileDto(email));
         }
 
+        if (!model.containsAttribute(ATTR_CHANGE_PASSWORD)) {
+            model.addAttribute(ATTR_CHANGE_PASSWORD, new ChangeUserPasswordDto());
+        }
+
+        if (!model.containsAttribute("userDeactivateDto")) {
+            model.addAttribute("userDeactivateDto", new UserDeactivateDto());
+        }
+
         ensureDefaultAttributes(model);
         model.addAttribute(ATTR_CURRENT_USER, userService.getUserViewByEmail(email));
 
@@ -56,16 +65,19 @@ public class SettingsController {
                              BindingResult bindingResult,
                              RedirectAttributes redirectAttributes,
                              Principal principal) {
-
         if (bindingResult.hasErrors()) {
             handleBindingErrors(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
             return "redirect:/settings";
         }
-
-        String oldEmail = principal.getName();
-        userService.changeProfileInfo(changeProfileDto, oldEmail);
-
-        if (!oldEmail.equals(changeProfileDto.getEmail())) {
+        boolean success = userService.changeProfileInfo(changeProfileDto, principal.getName());
+        if (!success) {
+            redirectAttributes.addFlashAttribute(ATTR_CHANGE_PROFILE, changeProfileDto);
+            redirectAttributes.addFlashAttribute(ATTR_INVALID_PROFILE, true);
+            redirectAttributes.addFlashAttribute("profileError", "Invalid password.");
+            return "redirect:/settings";
+        }
+        String currentEmail = principal.getName();
+        if (!currentEmail.equals(changeProfileDto.getEmail())) {
             updateSecurityContext(changeProfileDto.getEmail());
         }
 
@@ -82,17 +94,34 @@ public class SettingsController {
             return "redirect:/settings";
         }
 
-        userService.changeUserPassword(changeUserPasswordDto, principal.getName());
-        updateSecurityContext(principal.getName());
+        boolean success = userService.changeUserPassword(changeUserPasswordDto, principal.getName());
 
+        if (!success) {
+            redirectAttributes.addFlashAttribute(ATTR_CHANGE_PASSWORD, changeUserPasswordDto);
+            redirectAttributes.addFlashAttribute(ATTR_INVALID_PASSWORD, true);
+            redirectAttributes.addFlashAttribute("passwordError", "Current password does not match.");
+            return "redirect:/settings";
+        }
+
+        updateSecurityContext(principal.getName());
         return "redirect:/settings?pwSuccess=true";
     }
 
     @DeleteMapping()
-    public String disableAccount(Principal principal, HttpServletRequest request, HttpServletResponse response) {
-        userService.deleteUser(principal.getName());
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    public String disableAccount(@ModelAttribute("userDeactivateDto") UserDeactivateDto deactivateDto,
+                                 Principal principal,
+                                 HttpServletRequest request,
+                                 HttpServletResponse response,
+                                 RedirectAttributes redirectAttributes) {
 
+        boolean success = userService.deleteUser(principal.getName(), deactivateDto.getCurrentPassword());
+
+        if (!success) {
+            redirectAttributes.addFlashAttribute("deactivateError", "Invalid password. Account not deactivated.");
+            return "redirect:/settings";
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {
             new SecurityContextLogoutHandler().logout(request, response, auth);
         }
