@@ -99,14 +99,23 @@ public class ChatServiceImpl implements ChatService {
 
         List<ChunkSearchResult> topResults = searchContext(chat.getDocument().getId(), content);
 
-        String contextText = TextUtils.joinChunkContents(topResults, "\n---\n");
+        List<ChunkSearchResult> relevantResults = topResults.stream()
+                .filter(result -> result.getSimilarity() >= 0.35)
+                .toList();
+
+        String contextText;
+        if (relevantResults.isEmpty()) {
+            contextText = "No relevant information was found in the provided document regarding the user's query.";
+        } else {
+            contextText = TextUtils.joinChunkContents(relevantResults, "\n---\n");
+        }
 
         String threadId = getOrInitThread(chat);
         String combinedPrompt = String.format(PROMPT_TEMPLATE, contextText, content);
         String aiResponse = openAiClient.askAssistant(threadId, combinedPrompt);
 
         Message aiMessage = messageService.saveMessage(chat, aiResponse, MessageRole.ASSISTANT);
-        messageService.saveMessageSources(aiMessage, topResults);
+        messageService.saveMessageSources(aiMessage, relevantResults);
 
         return new ChatResponseDto(aiResponse, aiMessage.getId());
     }
@@ -183,7 +192,6 @@ public class ChatServiceImpl implements ChatService {
 
                     CompletableFuture.runAsync(() -> {
                         try {
-                            // Увеличаваме леко закъснението, за да сме сигурни, че Azure DB е отразила записа
                             documentProcessingService.processDocument(documentId);
                             log.info("Методът processDocument е извикан успешно за ID: {}", documentId);
                         } catch (Exception e) {
