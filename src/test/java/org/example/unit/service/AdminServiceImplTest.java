@@ -48,7 +48,8 @@ public class AdminServiceImplTest {
                 modelMapper,
                 processingJobService,
                 documentProcessingService,
-                chatService
+                chatService,
+                 null
         );
     }
     @Test

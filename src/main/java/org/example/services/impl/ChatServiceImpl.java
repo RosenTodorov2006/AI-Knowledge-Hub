@@ -166,6 +166,10 @@ public class ChatServiceImpl implements ChatService {
 
         chatRepository.delete(chat);
     }
+    @Override
+    public long countAllChats() {
+        return chatRepository.count();
+    }
 
     private String getOrInitThread(Chat chat) {
         if (chat.getOpenAiThreadId() == null) {
