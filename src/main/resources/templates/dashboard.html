@@ -106,7 +106,7 @@
             <div class="header-left">
                 <h1 class="page-title" th:text="#{dashboard.title}">My Document Chats</h1>
                 <p class="page-subtitle"
-                   th:with="activeCount=${allChats?.?[documentStatus.toString() != 'FAILED']?.size()}"
+                   th:with="activeCount=${allChats != null ? allChats?.?[documentStatus != null and documentStatus.toString() != 'FAILED']?.size() : 0}"
                    th:text="#{dashboard.subtitle(${activeCount})}">0 documents</p>
             </div>
             <button class="upload-btn" onclick="showUploadModal()">
@@ -150,10 +150,10 @@
 
         <div class="documents-grid" id="chats-grid">
             <th:block th:each="chat : ${allChats}">
-                <div th:if="${chat.documentStatus.name() != 'FAILED'}"
+                <div th:if="${chat != null and chat.documentStatus != null and chat.documentStatus.name() != 'FAILED'}"
                      class="doc-card"
                      th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
-                     th:attr="data-full-filename=${chat.filename}, data-full-title=${chat.title}"
+                     th:attr="data-full-filename=${chat.filename}, data-full-title=${chat.lastMessage}"
                      style="cursor: pointer; position: relative;">
 
                     <div class="doc-card-header d-flex justify-content-between align-items-start">
@@ -163,7 +163,7 @@
                                 <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <span class="doc-filename"
-                                  th:text="${#strings.length(chat.filename) > 20 ? #strings.substring(chat.filename, 0, 20) + '...' : chat.filename}">Filename.pdf</span>
+                                  th:text="${chat.filename != null and #strings.length(chat.filename) > 20 ? #strings.substring(chat.filename, 0, 20) + '...' : chat.filename}">Filename.pdf</span>
                         </div>
 
                         <div class="d-flex align-items-center gap-2">
@@ -187,9 +187,9 @@
                     </div>
 
                     <div class="doc-card-body">
-                        <p class="doc-date" th:text="${#temporals.format(chat.uploadedAt, 'MMM dd, yyyy')}">Dec 20, 2024</p>
+                        <p class="doc-date" th:text="${chat.uploadedAt != null ? #temporals.format(chat.uploadedAt, 'MMM dd, yyyy') : 'No Date'}">Dec 20, 2024</p>
                         <p class="doc-preview"
-                           th:text="${#strings.length(chat.title) > 45 ? #strings.substring(chat.title, 0, 45) + '...' : chat.title}">Chat Title Preview</p>
+                           th:text="${chat.lastMessage != null and #strings.length(chat.lastMessage) > 45 ? #strings.substring(chat.lastMessage, 0, 45) + '...' : (chat.lastMessage ?: 'No messages yet')}">Chat Title Preview</p>
                     </div>
                 </div>
             </th:block>
@@ -223,8 +223,8 @@
             let visibleCount = 0;
 
             chatCards.forEach(card => {
-                const fullFilename = card.getAttribute('data-full-filename').toLowerCase();
-                const fullTitle = card.getAttribute('data-full-title').toLowerCase();
+                const fullFilename = card.getAttribute('data-full-filename')?.toLowerCase() || "";
+                const fullTitle = card.getAttribute('data-full-title')?.toLowerCase() || "";
 
                 if (fullFilename.includes(query) || fullTitle.includes(query)) {
                     card.style.display = 'flex';
