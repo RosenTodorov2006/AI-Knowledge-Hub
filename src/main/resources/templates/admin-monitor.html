@@ -9,18 +9,14 @@
     .stat-purple { border-top: 4px solid #8e44ad; }
     .stat-indigo { border-top: 4px solid #3f51b5; }
 
-    /* Стилизиране на грешките за разширяване при клик */
     .error-text {
         cursor: pointer;
         transition: all 0.2s ease;
         max-width: 250px;
     }
 
-    .error-text:hover {
-        background-color: rgba(239, 83, 80, 0.05);
-    }
+    .error-text:hover { background-color: rgba(239, 83, 80, 0.05); }
 
-    /* Съкращаване на текста с многоточие */
     .error-content {
         display: block;
         white-space: nowrap;
@@ -28,9 +24,8 @@
         text-overflow: ellipsis;
     }
 
-    /* Стил при разширена грешка */
     .expanded .error-content {
-        white-space: pre-wrap; /* Запазва новите редове на грешката */
+        white-space: pre-wrap;
         word-break: break-word;
         overflow: visible;
         max-width: 500px;
@@ -39,7 +34,6 @@
 
 <body>
 <div class="dashboard-wrapper">
-
     <aside th:replace="~{fragments/layout :: sidebar('monitor', ${currentUser})}"></aside>
 
     <main class="main-content">
@@ -60,94 +54,83 @@
             </div>
         </header>
 
-        <div class="stats-grid">
-            <div class="stat-card stat-blue">
-                <div class="stat-content">
-                    <div class="stat-value" th:text="${stats.currentlyProcessing}">5</div>
-                    <div class="stat-label" th:text="#{admin.monitor.stats.processing.label}">Currently Processing</div>
-                    <div class="stat-footer" th:text="#{admin.monitor.stats.processing.footer}">Active indexing jobs</div>
+        <div id="monitor-content" th:fragment="monitor-content">
+            <div class="stats-grid">
+                <div class="stat-card stat-blue">
+                    <div class="stat-content">
+                        <div class="stat-value" th:text="${stats.currentlyProcessing}">5</div>
+                        <div class="stat-label" th:text="#{admin.monitor.stats.processing.label}">Currently Processing</div>
+                        <div class="stat-footer" th:text="#{admin.monitor.stats.processing.footer}">Active indexing jobs</div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-green">
+                    <div class="stat-content">
+                        <div class="stat-value" th:text="${stats.successRate + '%'}">98.4%</div>
+                        <div class="stat-label" th:text="#{admin.monitor.stats.rate.label}">Success Rate</div>
+                        <div class="stat-footer" th:text="#{admin.monitor.stats.rate.footer}">Last 24 hours</div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-orange">
+                    <div class="stat-content">
+                        <div class="stat-value" th:text="${stats.totalVectors}">1.2M</div>
+                        <div class="stat-label" th:text="#{admin.monitor.stats.vectors.label}">Vectors Stored</div>
+                        <div class="stat-footer" th:text="#{admin.monitor.stats.vectors.footer}">Total embeddings</div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-purple">
+                    <div class="stat-content">
+                        <div class="stat-value" th:text="${stats.totalChats}">0</div>
+                        <div class="stat-label">Active Chats</div>
+                        <div class="stat-footer">Total conversations</div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-indigo">
+                    <div class="stat-content">
+                        <div class="stat-value" th:text="${stats.activeUsers}">0</div>
+                        <div class="stat-label">Active Users</div>
+                        <div class="stat-footer">Registered accounts</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="stat-card stat-green">
-                <div class="stat-content">
-                    <div class="stat-value" th:text="${stats.successRate + '%'}">98.4%</div>
-                    <div class="stat-label" th:text="#{admin.monitor.stats.rate.label}">Success Rate</div>
-                    <div class="stat-footer" th:text="#{admin.monitor.stats.rate.footer}">Last 24 hours</div>
-                </div>
+            <div class="table-container">
+                <table class="processing-table">
+                    <thead>
+                    <tr>
+                        <th th:text="#{admin.monitor.table.header.id}">JOB ID</th>
+                        <th th:text="#{admin.monitor.table.header.filename}">FILE NAME</th>
+                        <th th:text="#{admin.monitor.table.header.user}">USER</th>
+                        <th th:text="#{admin.monitor.table.header.progress}">STAGE PROGRESS</th>
+                        <th th:text="#{admin.monitor.table.header.status}">STATUS</th>
+                        <th th:text="#{admin.monitor.table.header.errortime}">ERROR / TIME</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="job : ${jobs}">
+                        <td class="job-id" th:text="${job.jobId}">#JOB-001</td>
+                        <td class="file-name" th:text="${job.fileName}">Research_Paper.pdf</td>
+                        <td class="user-name" th:text="${job.userEmail}">user@example.com</td>
+                        <td class="stage-progress">
+                            <div class="stage-badges">
+                                <span class="stage-badge" th:classappend="${job.error == null ? 'completed' : 'failed'}" th:text="#{admin.monitor.table.stage.process}">PROCESS</span>
+                                <span class="stage-connector"></span>
+                                <span class="stage-badge" th:classappend="${job.error == null ? 'completed' : 'pending'}" th:text="#{admin.monitor.table.stage.embed}">EMBED</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-pill" th:classappend="${job.error == null ? 'status-success' : 'status-failed'}" th:text="${job.error == null} ? #{admin.monitor.table.status.success} : #{admin.monitor.table.status.failed}">Status</span>
+                        </td>
+                        <td class="error-time" th:classappend="${job.error != null ? 'error-text' : ''}" th:onclick="${job.error != null} ? 'toggleError(this)' : ''">
+                            <span class="error-content" th:text="${job.error != null ? job.error : job.timeAgo}">2 min ago</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
-
-            <div class="stat-card stat-orange">
-                <div class="stat-content">
-                    <div class="stat-value" th:text="${stats.totalVectors}">1.2M</div>
-                    <div class="stat-label" th:text="#{admin.monitor.stats.vectors.label}">Vectors Stored</div>
-                    <div class="stat-footer" th:text="#{admin.monitor.stats.vectors.footer}">Total embeddings</div>
-                </div>
-            </div>
-
-            <div class="stat-card stat-purple">
-                <div class="stat-content">
-                    <div class="stat-value" th:text="${stats.totalChats}">0</div>
-                    <div class="stat-label">Active Chats</div>
-                    <div class="stat-footer">Total conversations</div>
-                </div>
-            </div>
-
-            <div class="stat-card stat-indigo">
-                <div class="stat-content">
-                    <div class="stat-value" th:text="${stats.activeUsers}">0</div>
-                    <div class="stat-label">Active Users</div>
-                    <div class="stat-footer">Registered accounts</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <table class="processing-table">
-                <thead>
-                <tr>
-                    <th th:text="#{admin.monitor.table.header.id}">JOB ID</th>
-                    <th th:text="#{admin.monitor.table.header.filename}">FILE NAME</th>
-                    <th th:text="#{admin.monitor.table.header.user}">USER</th>
-                    <th th:text="#{admin.monitor.table.header.progress}">STAGE PROGRESS</th>
-                    <th th:text="#{admin.monitor.table.header.status}">STATUS</th>
-                    <th th:text="#{admin.monitor.table.header.errortime}">ERROR / TIME</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="job : ${jobs}">
-                    <td class="job-id" th:text="${job.jobId}">#JOB-001</td>
-                    <td class="file-name" th:text="${job.fileName}">Research_Paper.pdf</td>
-                    <td class="user-name" th:text="${job.userEmail}">user@example.com</td>
-                    <td class="stage-progress">
-                        <div class="stage-badges">
-                            <span class="stage-badge"
-                                  th:classappend="${job.error == null ? 'completed' : 'failed'}"
-                                  th:text="#{admin.monitor.table.stage.process}">PROCESS</span>
-                            <span class="stage-connector"></span>
-                            <span class="stage-badge"
-                                  th:classappend="${job.error == null ? 'completed' : 'pending'}"
-                                  th:text="#{admin.monitor.table.stage.embed}">EMBED</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-pill"
-                              th:classappend="${job.error == null ? 'status-success' : 'status-failed'}"
-                              th:text="${job.error == null} ? #{admin.monitor.table.status.success} : #{admin.monitor.table.status.failed}">
-                              Status
-                        </span>
-                    </td>
-                    <td class="error-time"
-                        th:classappend="${job.error != null ? 'error-text' : ''}"
-                        th:onclick="${job.error != null} ? 'toggleError(this)' : ''">
-                        <span class="error-content"
-                              th:text="${job.error != null ? job.error : job.timeAgo}">
-                            2 min ago
-                        </span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
         </div>
     </main>
 </div>
@@ -160,15 +143,31 @@
         element.classList.toggle('expanded');
     }
 
+    // Функция за ТИХО обновяване (Polling) [cite: 2026-02-15]
+    function refreshData() {
+        // Не обновяваме, ако потребителят чете разширена грешка [cite: 2026-02-15]
+        if (document.querySelector('.error-time.expanded')) return;
+
+        fetch('/admin/monitor/updates')
+            .then(response => {
+                if (response.status === 401 || response.status === 403) {
+                    window.location.reload(); // Сесията е изтекла [cite: 2026-02-17]
+                    return;
+                }
+                return response.text();
+            })
+            .then(html => {
+                const container = document.getElementById('monitor-content');
+                if (container && html) {
+                    container.innerHTML = html;
+                }
+            })
+            .catch(err => console.warn("Polling error:", err));
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        setInterval(function() {
-            const isAnyErrorExpanded = document.querySelector('.error-time.expanded');
-            if (!isAnyErrorExpanded) {
-                window.location.reload();
-            }
-        }, 30000);
+        setInterval(refreshData, 30000);
     });
 </script>
-
 </body>
 </html>

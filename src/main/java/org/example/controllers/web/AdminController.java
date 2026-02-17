@@ -31,6 +31,11 @@ public class AdminController {
 
         return "admin-monitor";
     }
+    @GetMapping("/monitor/updates")
+    public String getMonitorUpdates(Model model, Principal principal) {
+        populateMonitorModel(model, principal.getName());
+        return "admin-monitor :: monitor-content";
+    }
 
     private void populateMonitorModel(Model model, String email) {
         model.addAttribute(ATTR_JOBS, adminService.getFailedJobs());
