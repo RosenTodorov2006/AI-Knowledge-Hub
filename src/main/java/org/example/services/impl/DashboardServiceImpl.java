@@ -47,6 +47,7 @@ public class DashboardServiceImpl implements DashboardService {
             mappedChatDto.setUploadedAt(chat.getDocument().getUploadedAt());
             chatDtoList.add(mappedChatDto);
         }
+        chatDtoList.sort((c1, c2) -> c2.getUploadedAt().compareTo(c1.getUploadedAt()));
         return chatDtoList;
     }
 }
