@@ -24,7 +24,6 @@
         border-left: 5px solid #4caf50;
     }
 
-    /* Стил за търсачката */
     .search-section {
         margin: 1rem 1.5rem 2rem;
     }
@@ -154,6 +153,7 @@
                 <div th:if="${chat.documentStatus.name() != 'FAILED'}"
                      class="doc-card"
                      th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
+                     th:attr="data-full-filename=${chat.filename}, data-full-title=${chat.title}"
                      style="cursor: pointer; position: relative;">
 
                     <div class="doc-card-header d-flex justify-content-between align-items-start">
@@ -163,7 +163,7 @@
                                 <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <span class="doc-filename"
-                                  th:text="${#strings.length(chat.filename) > 22 ? #strings.substring(chat.filename, 0, 22) + '...' : chat.filename}">Filename.pdf</span>
+                                  th:text="${#strings.length(chat.filename) > 20 ? #strings.substring(chat.filename, 0, 20) + '...' : chat.filename}">Filename.pdf</span>
                         </div>
 
                         <div class="d-flex align-items-center gap-2">
@@ -188,7 +188,8 @@
 
                     <div class="doc-card-body">
                         <p class="doc-date" th:text="${#temporals.format(chat.uploadedAt, 'MMM dd, yyyy')}">Dec 20, 2024</p>
-                        <p class="doc-preview" th:text="${chat.title}">Chat Title Preview</p>
+                        <p class="doc-preview"
+                           th:text="${#strings.length(chat.title) > 45 ? #strings.substring(chat.title, 0, 45) + '...' : chat.title}">Chat Title Preview</p>
                     </div>
                 </div>
             </th:block>
@@ -213,7 +214,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('chat-search');
-        const chatsGrid = document.getElementById('chats-grid');
         const uploadCard = document.getElementById('upload-card');
         const noResults = document.getElementById('no-chats-found');
         const chatCards = document.querySelectorAll('.doc-card:not(.start-new-card)');
@@ -223,10 +223,10 @@
             let visibleCount = 0;
 
             chatCards.forEach(card => {
-                const filename = card.querySelector('.doc-filename').textContent.toLowerCase();
-                const preview = card.querySelector('.doc-preview').textContent.toLowerCase();
+                const fullFilename = card.getAttribute('data-full-filename').toLowerCase();
+                const fullTitle = card.getAttribute('data-full-title').toLowerCase();
 
-                if (filename.includes(query) || preview.includes(query)) {
+                if (fullFilename.includes(query) || fullTitle.includes(query)) {
                     card.style.display = 'flex';
                     visibleCount++;
                 } else {
