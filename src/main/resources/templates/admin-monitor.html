@@ -8,6 +8,33 @@
 <style>
     .stat-purple { border-top: 4px solid #8e44ad; }
     .stat-indigo { border-top: 4px solid #3f51b5; }
+
+    /* Стилизиране на грешките за разширяване при клик */
+    .error-text {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        max-width: 250px;
+    }
+
+    .error-text:hover {
+        background-color: rgba(239, 83, 80, 0.05);
+    }
+
+    /* Съкращаване на текста с многоточие */
+    .error-content {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Стил при разширена грешка */
+    .expanded .error-content {
+        white-space: pre-wrap; /* Запазва новите редове на грешката */
+        word-break: break-word;
+        overflow: visible;
+        max-width: 500px;
+    }
 </style>
 
 <body>
@@ -112,8 +139,11 @@
                     </td>
                     <td class="error-time"
                         th:classappend="${job.error != null ? 'error-text' : ''}"
-                        th:text="${job.error != null ? job.error : job.timeAgo}">
-                        2 min ago
+                        th:onclick="${job.error != null} ? 'toggleError(this)' : ''">
+                        <span class="error-content"
+                              th:text="${job.error != null ? job.error : job.timeAgo}">
+                            2 min ago
+                        </span>
                     </td>
                 </tr>
                 </tbody>
@@ -126,9 +156,16 @@
 <th:block th:replace="~{fragments/scripts :: common-scripts}"></th:block>
 
 <script>
+    function toggleError(element) {
+        element.classList.toggle('expanded');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            window.location.reload();
+        setInterval(function() {
+            const isAnyErrorExpanded = document.querySelector('.error-time.expanded');
+            if (!isAnyErrorExpanded) {
+                window.location.reload();
+            }
         }, 30000);
     });
 </script>
