@@ -10,6 +10,7 @@ public class ChatDto {
     private String filename;
     private DocumentStatus documentStatus;
     private LocalDateTime uploadedAt;
+    private String lastMessage;
 
     public long getChatId() {
         return chatId;
@@ -49,5 +50,13 @@ public class ChatDto {
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+    public String getLastMessage() {
+        return lastMessage;
+    }
+
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
     }
 }

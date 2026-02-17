@@ -16,4 +16,5 @@ public interface ChatService {
     ChatViewDto getChatDetails(Long id, String gmail);
     List<Chat> findAllChatsByUserEntityId(long userId);
     String findUserEmailByDocument(Document document);
+    void deleteChat(Long chatId, String userEmail);
 }

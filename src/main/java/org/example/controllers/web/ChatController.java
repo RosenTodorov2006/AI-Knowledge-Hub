@@ -56,7 +56,16 @@ public class ChatController {
         session.setAttribute(SESSION_CHAT_ID, id);
         return "redirect:/chat";
     }
-
+    @PostMapping("/chats/delete/{id}")
+    public String deleteChat(@PathVariable Long id, Principal principal, RedirectAttributes redirectAttributes) {
+        try {
+            chatService.deleteChat(id, principal.getName());
+            redirectAttributes.addFlashAttribute("success", "Chat deleted successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Could not delete chat.");
+        }
+        return "redirect:/dashboard";
+    }
     @GetMapping("/chat")
     public String viewChat(HttpSession session, Model model, Principal principal) {
         Long id = (Long) session.getAttribute(SESSION_CHAT_ID);

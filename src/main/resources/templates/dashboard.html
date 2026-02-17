@@ -3,6 +3,99 @@
 
 <head th:replace="~{fragments/head :: head('Dashboard', ~{})}"></head>
 
+<style>
+    .alert-custom {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.4s ease-out;
+    }
+
+    .alert-success-custom {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border-left: 5px solid #4caf50;
+    }
+
+    .search-section {
+        margin: 1rem 1.5rem 2rem;
+    }
+
+    .search-input-group {
+        position: relative;
+        max-width: 400px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 12px 12px 40px;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #5D5DFE;
+        box-shadow: 0 0 0 3px rgba(93, 93, 254, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9e9e9e;
+    }
+
+    #no-chats-found {
+        display: none;
+        text-align: center;
+        padding: 3rem;
+        background: #f9f9f9;
+        border-radius: 15px;
+        margin: 1rem 1.5rem;
+    }
+
+    .btn-delete-chat {
+        color: #ef5350;
+        transition: all 0.2s ease;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px !important;
+    }
+
+    .btn-delete-chat:hover {
+        color: #d32f2f;
+        background-color: #ffebee;
+        transform: scale(1.15);
+    }
+
+    .doc-filename {
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>
+
 <body>
 <div class="dashboard-wrapper">
 
@@ -13,7 +106,8 @@
             <div class="header-left">
                 <h1 class="page-title" th:text="#{dashboard.title}">My Document Chats</h1>
                 <p class="page-subtitle"
-                   th:text="#{dashboard.subtitle(${allChats.?[documentStatus.name() != 'FAILED'].size()})}">0 documents</p>
+                   th:with="activeCount=${allChats != null ? allChats?.?[documentStatus != null and documentStatus.toString() != 'FAILED']?.size() : 0}"
+                   th:text="#{dashboard.subtitle(${activeCount})}">0 documents</p>
             </div>
             <button class="upload-btn" onclick="showUploadModal()">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,6 +117,24 @@
             </button>
         </header>
 
+        <div class="search-section">
+            <div class="search-input-group">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="chat-search" class="search-input" placeholder="Search by filename or chat content...">
+            </div>
+        </div>
+
+        <div th:if="${success}" class="alert-custom alert-success-custom">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span th:text="${success}">Success message content</span>
+        </div>
+
         <div class="info-banner">
             <svg class="info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -31,34 +143,58 @@
             <p th:text="#{dashboard.banner}">One File = One Chat: Each document gets its own dedicated conversation.</p>
         </div>
 
-        <div class="documents-grid">
+        <div id="no-chats-found">
+            <h3 style="color: #666; margin-bottom: 0.5rem;">No chats matches found</h3>
+            <p style="color: #999;">Try searching for a different keyword or filename.</p>
+        </div>
+
+        <div class="documents-grid" id="chats-grid">
             <th:block th:each="chat : ${allChats}">
-                <div th:if="${chat.documentStatus.name() != 'FAILED'}"
+                <div th:if="${chat != null and chat.documentStatus != null and chat.documentStatus.name() != 'FAILED'}"
                      class="doc-card"
                      th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
-                     style="cursor: pointer;">
+                     th:attr="data-full-filename=${chat.filename}, data-full-title=${chat.lastMessage}"
+                     style="cursor: pointer; position: relative;">
 
-                    <div class="doc-card-header">
+                    <div class="doc-card-header d-flex justify-content-between align-items-start">
                         <div class="doc-file-info">
                             <svg class="file-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span class="doc-filename" th:text="${chat.filename}">Filename.pdf</span>
+                            <span class="doc-filename"
+                                  th:text="${chat.filename != null and #strings.length(chat.filename) > 20 ? #strings.substring(chat.filename, 0, 20) + '...' : chat.filename}">Filename.pdf</span>
                         </div>
 
-                        <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
-                              th:text="${chat.documentStatus}">Ready</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <form th:action="@{'/chats/delete/' + ${chat.chatId}}"
+                                  th:method="POST"
+                                  onclick="event.stopPropagation();"
+                                  onsubmit="return confirm('Сигурни ли сте, че искате да изтриете този чат?');">
+                                <button type="submit" class="btn-delete-chat border-0 bg-transparent" title="Delete Chat">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </form>
+
+                            <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
+                                  th:text="${chat.documentStatus}">Ready</span>
+                        </div>
                     </div>
 
                     <div class="doc-card-body">
-                        <p class="doc-date" th:text="${#temporals.format(chat.uploadedAt, 'MMM dd, yyyy')}">Dec 20, 2024</p>
-                        <p class="doc-preview" th:text="${chat.title}">Chat Title Preview</p>
+                        <p class="doc-date" th:text="${chat.uploadedAt != null ? #temporals.format(chat.uploadedAt, 'MMM dd, yyyy') : 'No Date'}">Dec 20, 2024</p>
+                        <p class="doc-preview"
+                           th:text="${chat.lastMessage != null and #strings.length(chat.lastMessage) > 45 ? #strings.substring(chat.lastMessage, 0, 45) + '...' : (chat.lastMessage ?: 'No messages yet')}">Chat Title Preview</p>
                     </div>
                 </div>
             </th:block>
 
-            <div class="doc-card start-new-card" onclick="showUploadModal()" style="cursor: pointer;">
+            <div class="doc-card start-new-card" id="upload-card" onclick="showUploadModal()" style="cursor: pointer;">
                 <div class="start-new-content">
                     <svg class="plus-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M24 12V36M12 24H36" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round"/>
@@ -72,10 +208,42 @@
 </div>
 
 <div th:replace="~{fragments/modals :: upload-modal}"></div>
-
 <button th:replace="~{fragments/layout :: mobile-toggle}"></button>
-
 <th:block th:replace="~{fragments/scripts :: common-scripts}"></th:block>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('chat-search');
+        const uploadCard = document.getElementById('upload-card');
+        const noResults = document.getElementById('no-chats-found');
+        const chatCards = document.querySelectorAll('.doc-card:not(.start-new-card)');
+
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            chatCards.forEach(card => {
+                const fullFilename = card.getAttribute('data-full-filename')?.toLowerCase() || "";
+                const fullTitle = card.getAttribute('data-full-title')?.toLowerCase() || "";
+
+                if (fullFilename.includes(query) || fullTitle.includes(query)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0 && query !== "") {
+                noResults.style.display = 'block';
+                uploadCard.style.display = 'none';
+            } else {
+                noResults.style.display = 'none';
+                uploadCard.style.display = 'flex';
+            }
+        });
+    });
+</script>
 
 </body>
 </html>
