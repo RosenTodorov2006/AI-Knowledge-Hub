@@ -4,10 +4,7 @@ import org.example.models.dtos.exportDtos.AdminStatsDto;
 import org.example.models.dtos.exportDtos.ProcessingJobDto;
 import org.example.models.entities.ProcessingJob;
 import org.example.models.entities.enums.ProcessingJobStage;
-import org.example.services.AdminService;
-import org.example.services.ChatService;
-import org.example.services.DocumentProcessingService;
-import org.example.services.ProcessingJobService;
+import org.example.services.*;
 import org.example.utils.DateTimeUtils;
 import org.example.utils.FormatUtils;
 import org.modelmapper.ModelMapper;
@@ -24,15 +21,17 @@ public class AdminServiceImpl implements AdminService {
     private final ProcessingJobService processingJobService;
     private final DocumentProcessingService documentProcessingService;
     private final ChatService chatService;
+    private final UserService userService;
 
     public AdminServiceImpl(ModelMapper modelMapper,
                             ProcessingJobService processingJobService,
                             DocumentProcessingService documentProcessingService,
-                            ChatService chatService) {
+                            ChatService chatService, UserService userService) {
         this.modelMapper = modelMapper;
         this.processingJobService = processingJobService;
         this.documentProcessingService = documentProcessingService;
         this.chatService = chatService;
+        this.userService = userService;
     }
 
     @Override
@@ -51,8 +50,10 @@ public class AdminServiceImpl implements AdminService {
 
         double successRate = FormatUtils.calculateSuccessRate(completed, failed);
         String formattedVectors = FormatUtils.formatVectorCount(documentProcessingService.getTotalVectorCount());
+        long totalChats = chatService.countAllChats();
+        long activeUsers = userService.countAllUsers();
 
-        return new AdminStatsDto(processing, successRate, formattedVectors);
+        return new AdminStatsDto(processing, successRate, formattedVectors, totalChats, activeUsers);
     }
 
     private ProcessingJobDto convertToFailedJobDto(ProcessingJob job) {
@@ -75,4 +76,5 @@ public class AdminServiceImpl implements AdminService {
         dto.setEmbedPassed(currentStage == ProcessingJobStage.INDEXING
                 || currentStage == ProcessingJobStage.COMPLETED);
     }
+
 }

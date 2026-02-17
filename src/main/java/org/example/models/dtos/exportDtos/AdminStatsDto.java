@@ -4,13 +4,32 @@ public class AdminStatsDto {
     private long currentlyProcessing;
     private double successRate;
     private String totalVectors;
+    private long totalChats;
+    private long activeUsers;
 
-    public AdminStatsDto(long currentlyProcessing, double successRate, String totalVectors) {
+    public AdminStatsDto(long currentlyProcessing, double successRate, String totalVectors, long totalChats, long activeUsers) {
         this.currentlyProcessing = currentlyProcessing;
         this.successRate = successRate;
         this.totalVectors = totalVectors;
+        this.totalChats = totalChats;
+        this.activeUsers = activeUsers;
     }
 
+    public long getTotalChats() {
+        return totalChats;
+    }
+
+    public void setTotalChats(long totalChats) {
+        this.totalChats = totalChats;
+    }
+
+    public long getActiveUsers() {
+        return activeUsers;
+    }
+
+    public void setActiveUsers(long activeUsers) {
+        this.activeUsers = activeUsers;
+    }
 
     public long getCurrentlyProcessing() {
         return currentlyProcessing;

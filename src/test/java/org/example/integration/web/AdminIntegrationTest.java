@@ -37,7 +37,8 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
                 ApplicationRole.ADMIN,
                 true,
                 LocalDateTime.now(),
-                TEST_FULL_NAME
+                TEST_FULL_NAME,
+                null
         );
         userRepository.save(admin);
     }

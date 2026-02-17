@@ -198,4 +198,8 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findAll();
     }
 
+    @Override
+    public long countAllUsers() {
+        return userRepository.countByActiveTrue();
+    }
 }

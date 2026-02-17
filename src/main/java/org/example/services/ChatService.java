@@ -17,4 +17,5 @@ public interface ChatService {
     List<Chat> findAllChatsByUserEntityId(long userId);
     String findUserEmailByDocument(Document document);
     void deleteChat(Long chatId, String userEmail);
+    long countAllChats();
 }

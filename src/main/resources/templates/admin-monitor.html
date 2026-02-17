@@ -5,6 +5,11 @@
     <link rel="stylesheet" th:href="@{/css/admin-monitor.css}">
 </head>
 
+<style>
+    .stat-purple { border-top: 4px solid #8e44ad; }
+    .stat-indigo { border-top: 4px solid #3f51b5; }
+</style>
+
 <body>
 <div class="dashboard-wrapper">
 
@@ -50,6 +55,22 @@
                     <div class="stat-value" th:text="${stats.totalVectors}">1.2M</div>
                     <div class="stat-label" th:text="#{admin.monitor.stats.vectors.label}">Vectors Stored</div>
                     <div class="stat-footer" th:text="#{admin.monitor.stats.vectors.footer}">Total embeddings</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-purple">
+                <div class="stat-content">
+                    <div class="stat-value" th:text="${stats.totalChats}">0</div>
+                    <div class="stat-label">Active Chats</div>
+                    <div class="stat-footer">Total conversations</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-indigo">
+                <div class="stat-content">
+                    <div class="stat-value" th:text="${stats.activeUsers}">0</div>
+                    <div class="stat-label">Active Users</div>
+                    <div class="stat-footer">Registered accounts</div>
                 </div>
             </div>
         </div>
@@ -103,6 +124,14 @@
 
 <button th:replace="~{fragments/layout :: mobile-toggle}"></button>
 <th:block th:replace="~{fragments/scripts :: common-scripts}"></th:block>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+    });
+</script>
 
 </body>
 </html>

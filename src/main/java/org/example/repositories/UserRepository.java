@@ -20,4 +20,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             "AND u.createdAt < :threshold " +
             "AND NOT EXISTS (SELECT c FROM Chat c WHERE c.userEntity = u AND c.lastMessageAt > :threshold)")
     List<UserEntity> findInactiveUsers(@Param("threshold") LocalDateTime threshold);
+    long countByActiveTrue();
 }

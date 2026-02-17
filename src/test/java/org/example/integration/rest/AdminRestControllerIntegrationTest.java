@@ -40,7 +40,8 @@ public class AdminRestControllerIntegrationTest extends BaseIntegrationTest {
                 ApplicationRole.ADMIN,
                 true,
                 LocalDateTime.now(),
-                TEST_ADMIN_FULL_NAME
+                TEST_ADMIN_FULL_NAME,
+                null
         );
         userRepository.save(admin);
     }
