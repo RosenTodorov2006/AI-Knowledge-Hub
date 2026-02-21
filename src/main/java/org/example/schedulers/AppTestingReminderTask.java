@@ -33,7 +33,7 @@ public class AppTestingReminderTask {
         this.userService = userService;
     }
 
-    @Scheduled(fixedRate = 86400000)
+    @Scheduled(cron = "0 0 0 * * *")
     public void executeDailyTestingReminder() {
         logger.info("Starting daily user reminder task...");
 
