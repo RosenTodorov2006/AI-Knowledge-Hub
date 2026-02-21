@@ -60,7 +60,19 @@
                     </div>
                     <h4 class="fw-bold mb-2">Check your email!</h4>
                     <p class="text-muted mb-4">We've sent a verification link to your inbox. Please click it to activate your account and start using AI Knowledge Hub.</p>
-                    <a th:href="@{/login}" class="btn btn-dark px-4 fw-bold shadow-sm">Go to Login</a>
+                    <div class="d-flex flex-column align-items-center gap-3">
+                        <a th:href="@{/login}" class="btn btn-dark px-4 fw-bold shadow-sm">Go to Login</a>
+
+                        <form th:action="@{/resend-verification}" th:method="POST">
+                            <input type="hidden" name="email" th:value="${registerSeedDto.email}">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <p class="small text-muted mb-0">Didn't receive the email?</p>
+                                <button type="submit" class="btn btn-link btn-sm text-decoration-none fw-bold text-dark p-0" style="line-height: inherit;">
+                                    Resend verification link
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 <form th:unless="${registrationSuccess}" class="auth-form" th:action="@{/register}" th:method="POST" th:object="${registerSeedDto}">

@@ -68,6 +68,27 @@ public class UserServiceImpl implements UserService {
 
         emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", emailBody);
     }
+
+    @Override
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (user.isActive()) {
+            return;
+        }
+
+        String newToken = UUID.randomUUID().toString();
+        user.setVerificationToken(newToken);
+        userRepository.save(user);
+
+        String confirmationLink = "http://localhost:8080/users/verify?token=" + newToken;
+        String emailBody = String.format("Hello %s,\n\nHere is your new verification link:\n%s",
+                user.getUsername(), confirmationLink);
+
+        emailService.sendSimpleEmail(user.getEmail(), "Resend: Confirm your registration", emailBody);
+    }
     @Override
     @Transactional
     public void toggleEmailNotifications(String email) {

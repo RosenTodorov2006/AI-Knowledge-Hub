@@ -28,4 +28,5 @@ public interface UserService {
     void deactivateInactiveUsers(int months);
     long countAllUsers();
     void toggleEmailNotifications(String email);
+    void resendVerificationEmail(String email);
 }

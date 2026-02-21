@@ -118,6 +118,18 @@ public class UserController {
         return "login";
     }
 
+    @PostMapping("/resend-verification")
+    public String resendVerification(@RequestParam("email") String email, RedirectAttributes redirectAttributes) {
+        try {
+            userService.resendVerificationEmail(email);
+            redirectAttributes.addFlashAttribute("success", "A new verification email has been sent to " + email);
+            return "redirect:/login?disabled=true";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Could not resend verification email.");
+            return "redirect:/login?error";
+        }
+    }
+
     private String getErrorMessage(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         Locale locale = LocaleContextHolder.getLocale();
