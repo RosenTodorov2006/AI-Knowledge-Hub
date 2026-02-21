@@ -139,6 +139,23 @@
                     </div>
                 </div>
             </div>
+            <div class="settings-card" style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 600; color: #111827; margin: 0;">Email Notifications</h3>
+                        <p style="font-size: 0.875rem; color: #6B7280; margin: 4px 0 0 0;">Receive updates about your document processing and account security.</p>
+                    </div>
+
+                    <form th:action="@{/settings/toggle-emails}" method="post">
+                        <button type="submit"
+                                th:class="${currentUser.emailNotificationsEnabled} ? 'btn-danger' : 'btn-success'"
+                                style="padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s;"
+                                th:styleappend="${currentUser.emailNotificationsEnabled} ? 'background: #FEE2E2; color: #991B1B;' : 'background: #D1FAE5; color: #065F46;'">
+                            <span th:text="${currentUser.emailNotificationsEnabled} ? 'Disable Emails' : 'Enable Emails'">Toggle</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </main>
 </div>

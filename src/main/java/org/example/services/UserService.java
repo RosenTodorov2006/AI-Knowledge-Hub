@@ -27,4 +27,5 @@ public interface UserService {
     boolean reactivateAccount(String email, String password);
     void deactivateInactiveUsers(int months);
     long countAllUsers();
+    void toggleEmailNotifications(String email);
 }

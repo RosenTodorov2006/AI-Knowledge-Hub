@@ -24,8 +24,10 @@ public class UserEntity extends BaseEntity{
     private String fullName;
     @Column(name = "verification_token")
     private String verificationToken;
+    @Column(name = "email_notifications_enabled", nullable = false)
+    private boolean emailNotificationsEnabled;
 
-    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt, String fullName, String verificationToken) {
+    public UserEntity(String email, String password, String username, ApplicationRole applicationRole, boolean active, LocalDateTime createdAt, String fullName, String verificationToken, boolean emailNotificationsEnabled) {
         this.email = email;
         this.password = password;
         this.username = username;
@@ -34,6 +36,7 @@ public class UserEntity extends BaseEntity{
         this.createdAt = createdAt;
         this.fullName = fullName;
         this.verificationToken = verificationToken;
+        this.emailNotificationsEnabled = emailNotificationsEnabled;
     }
 
     public UserEntity() {
@@ -103,4 +106,11 @@ public class UserEntity extends BaseEntity{
         this.verificationToken = verificationToken;
     }
 
+    public boolean isEmailNotificationsEnabled() {
+        return emailNotificationsEnabled;
+    }
+
+    public void setEmailNotificationsEnabled(boolean emailNotificationsEnabled) {
+        this.emailNotificationsEnabled = emailNotificationsEnabled;
+    }
 }

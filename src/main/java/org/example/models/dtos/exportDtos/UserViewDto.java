@@ -3,6 +3,7 @@ package org.example.models.dtos.exportDtos;
 public class UserViewDto {
     private String email;
     private String fullName;
+    private boolean emailNotificationsEnabled;
     public String getEmail() {
         return email;
     }
@@ -13,8 +14,14 @@ public class UserViewDto {
     public String getFullName() {
         return fullName;
     }
-
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public boolean isEmailNotificationsEnabled() {
+        return emailNotificationsEnabled;
+    }
+    public void setEmailNotificationsEnabled(boolean emailNotificationsEnabled) {
+        this.emailNotificationsEnabled = emailNotificationsEnabled;
     }
 }

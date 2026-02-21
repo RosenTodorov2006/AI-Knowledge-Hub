@@ -15,6 +15,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -48,6 +49,7 @@ public class UserServiceImpl implements UserService {
         UserEntity user = this.modelMapper.map(registerSeedDto, UserEntity.class);
         user.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
         user.setRole(this.userRepository.count() == 0 ? ApplicationRole.ADMIN : ApplicationRole.USER);
+        user.setEmailNotificationsEnabled(true);
 
         user.setActive(false);
         user.setCreatedAt(LocalDateTime.now());
@@ -66,7 +68,15 @@ public class UserServiceImpl implements UserService {
 
         emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", emailBody);
     }
+    @Override
+    @Transactional
+    public void toggleEmailNotifications(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        user.setEmailNotificationsEnabled(!user.isEmailNotificationsEnabled());
+        userRepository.save(user);
+    }
     @Override
     @Transactional
     public boolean verifyUser(String token) {

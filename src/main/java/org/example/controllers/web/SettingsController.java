@@ -127,6 +127,16 @@ public class SettingsController {
         }
         return "redirect:/?deactivated=true";
     }
+    @PostMapping("/toggle-emails")
+    public String toggleEmails(Principal principal, RedirectAttributes redirectAttributes) {
+        try {
+            userService.toggleEmailNotifications(principal.getName());
+            redirectAttributes.addFlashAttribute("success", "Email preferences updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Could not update email preferences.");
+        }
+        return "redirect:/settings";
+    }
 
     private void ensureDefaultAttributes(Model model) {
         if (!model.containsAttribute(ATTR_CHANGE_PASSWORD)) {
