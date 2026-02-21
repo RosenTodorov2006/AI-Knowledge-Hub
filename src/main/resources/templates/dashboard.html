@@ -67,32 +67,50 @@
     }
 
     .btn-delete-chat {
-        color: #ef5350;
-        transition: all 0.2s ease;
-        border-radius: 6px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 6px !important;
+        border-radius: 50%;
+        color: #94a3b8;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0;
+        flex-shrink: 0;
     }
 
     .btn-delete-chat:hover {
-        color: #d32f2f;
-        background-color: #ffebee;
-        transform: scale(1.15);
+        color: #ef4444;
+        background: #fef2f2;
+        border-color: #fee2e2;
+        transform: scale(1.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     .doc-filename {
-        max-width: 160px;
+        max-width: 150px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         display: inline-block;
+        font-weight: 600;
+        color: #1f2937;
     }
 
     @keyframes slideDown {
         from { transform: translateY(-20px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.025em;
     }
 </style>
 
@@ -154,53 +172,48 @@
                      class="doc-card"
                      th:onclick="|window.location.href='/chats/select/' + ${chat.chatId}|"
                      th:attr="data-full-filename=${chat.filename}, data-full-title=${chat.lastMessage}"
-                     style="cursor: pointer; position: relative;">
+                     style="cursor: pointer; position: relative; padding: 20px; border-radius: 16px; background: white; border: 1px solid #e5e7eb; transition: all 0.3s ease;">
 
-                    <div class="doc-card-header d-flex justify-content-between align-items-start">
-                        <div class="doc-file-info">
-                            <svg class="file-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div class="doc-card-header d-flex justify-content-between align-items-start" style="margin-bottom: 12px;">
+                        <div class="doc-file-info d-flex align-items-center gap-2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M14 2V8H20" stroke="#5D5DFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span class="doc-filename"
-                                  th:text="${chat.filename != null and #strings.length(chat.filename) > 20 ? #strings.substring(chat.filename, 0, 20) + '...' : chat.filename}">Filename.pdf</span>
+                            <span class="doc-filename" th:text="${chat.filename != null and #strings.length(chat.filename) > 20 ? #strings.substring(chat.filename, 0, 20) + '...' : chat.filename}">Filename.pdf</span>
                         </div>
 
-                        <div class="d-flex align-items-center gap-2">
-                            <form th:action="@{'/chats/delete/' + ${chat.chatId}}"
-                                  th:method="POST"
-                                  onclick="event.stopPropagation();"
-                                  onsubmit="return confirm('Сигурни ли сте, че искате да изтриете този чат?');">
-                                <button type="submit" class="btn-delete-chat border-0 bg-transparent" title="Delete Chat">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                    </svg>
-                                </button>
-                            </form>
-
-                            <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}"
-                                  th:text="${chat.documentStatus}">Ready</span>
-                        </div>
+                        <form th:action="@{'/chats/delete/' + ${chat.chatId}}"
+                              th:method="POST"
+                              onclick="event.stopPropagation();"
+                              onsubmit="return confirm('Сигурни ли сте, че искате да изтриете този чат?');">
+                            <button type="submit" class="btn-delete-chat border-0" title="Delete Chat">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </form>
                     </div>
 
                     <div class="doc-card-body">
-                        <p class="doc-date" th:text="${chat.uploadedAt != null ? #temporals.format(chat.uploadedAt, 'MMM dd, yyyy') : 'No Date'}">Dec 20, 2024</p>
-                        <p class="doc-preview"
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <p class="doc-date" style="margin: 0; font-size: 0.8rem; color: #9ca3af;" th:text="${chat.uploadedAt != null ? #temporals.format(chat.uploadedAt, 'MMM dd, yyyy') : 'No Date'}">Dec 20, 2024</p>
+                            <span th:class="'status-badge ' + ${chat.documentStatus.toString().toLowerCase()}" th:text="${chat.documentStatus}">Ready</span>
+                        </div>
+                        <p class="doc-preview" style="font-size: 0.875rem; color: #4b5563; line-height: 1.4;"
                            th:text="${chat.lastMessage != null and #strings.length(chat.lastMessage) > 45 ? #strings.substring(chat.lastMessage, 0, 45) + '...' : (chat.lastMessage ?: 'No messages yet')}">Chat Title Preview</p>
                     </div>
                 </div>
             </th:block>
 
             <div class="doc-card start-new-card" id="upload-card" onclick="showUploadModal()" style="cursor: pointer;">
-                <div class="start-new-content">
-                    <svg class="plus-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div class="start-new-content text-center">
+                    <svg class="plus-icon" width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M24 12V36M12 24H36" stroke="#5D5DFE" stroke-width="3" stroke-linecap="round"/>
                     </svg>
-                    <p class="start-new-text" th:text="#{dashboard.card.new.title}">Start New Chat</p>
-                    <p class="start-new-subtext" th:text="#{dashboard.card.new.subtitle}">Upload a document</p>
+                    <p class="start-new-text fw-bold mt-2" th:text="#{dashboard.card.new.title}" style="color: #5D5DFE;">Start New Chat</p>
+                    <p class="start-new-subtext small text-muted" th:text="#{dashboard.card.new.subtitle}">Upload a document</p>
                 </div>
             </div>
         </div>
@@ -227,7 +240,7 @@
                 const fullTitle = card.getAttribute('data-full-title')?.toLowerCase() || "";
 
                 if (fullFilename.includes(query) || fullTitle.includes(query)) {
-                    card.style.display = 'flex';
+                    card.style.display = 'block';
                     visibleCount++;
                 } else {
                     card.style.display = 'none';
