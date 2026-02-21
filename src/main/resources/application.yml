@@ -6,7 +6,6 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: aiknowledgehuba@gmail.com
-    # ТУК ПОСТАВИ 16-ЦИФРЕНИЯ КОД (без интервали)
     password: jaxaawvcaalruhny
     properties:
       mail:
