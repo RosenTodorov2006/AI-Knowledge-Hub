@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
@@ -39,29 +40,38 @@ public class DashboardServiceImpl implements DashboardService {
     public List<ChatDto> getAllChats(String gmail) {
         UserEntity userEntity = this.userService.findUserByEmail(gmail);
         List<Chat> currentChats = chatService.findAllChatsByUserEntityId(userEntity.getId());
-        List<ChatDto> chatDtoList = new ArrayList<>();
 
-        for (Chat chat : currentChats) {
-            if (chat == null || chat.getDocument() == null) {
-                continue;
-            }
-            ChatDto mappedChatDto = this.modelMapper.map(chat, ChatDto.class);
-            mappedChatDto.setFilename(chat.getDocument().getFilename());
-            mappedChatDto.setDocumentStatus(chat.getDocument().getDocumentStatus());
-            mappedChatDto.setUploadedAt(chat.getDocument().getUploadedAt());
-            String previewText = (chat.getMessages() != null && !chat.getMessages().isEmpty())
-                    ? chat.getMessages().get(chat.getMessages().size() - 1).getContent()
-                    : chat.getTitle();
-            mappedChatDto.setLastMessage(previewText);
-            chatDtoList.add(mappedChatDto);
-        }
+        List<ChatDto> chatDtoList = currentChats.stream()
+                .filter(chat -> chat != null && chat.getDocument() != null)
+                .map(this::mapToChatDto)
+                .collect(Collectors.toList());
+
+        sortChatsByDateDescending(chatDtoList);
+
+        return chatDtoList;
+    }
+
+    private ChatDto mapToChatDto(Chat chat) {
+        ChatDto mappedChatDto = this.modelMapper.map(chat, ChatDto.class);
+
+        mappedChatDto.setFilename(chat.getDocument().getFilename());
+        mappedChatDto.setDocumentStatus(chat.getDocument().getDocumentStatus());
+        mappedChatDto.setUploadedAt(chat.getDocument().getUploadedAt());
+
+        String previewText = (chat.getMessages() != null && !chat.getMessages().isEmpty())
+                ? chat.getMessages().get(chat.getMessages().size() - 1).getContent()
+                : chat.getTitle();
+
+        mappedChatDto.setLastMessage(previewText);
+        return mappedChatDto;
+    }
+
+    private void sortChatsByDateDescending(List<ChatDto> chatDtoList) {
         chatDtoList.sort((c1, c2) -> {
             if (c1.getUploadedAt() == null || c2.getUploadedAt() == null) {
                 return 0;
             }
             return c2.getUploadedAt().compareTo(c1.getUploadedAt());
         });
-
-        return chatDtoList;
     }
 }
