@@ -14,7 +14,6 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByEmail(String email);
     Optional<UserEntity> findByUsername(String username);
-    Optional<UserEntity> findByVerificationToken(String token);
     @Query("SELECT u FROM UserEntity u " +
             "WHERE u.active = true " +
             "AND u.createdAt < :threshold " +

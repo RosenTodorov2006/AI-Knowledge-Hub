@@ -64,7 +64,7 @@
                     <div class="d-flex flex-column align-items-center gap-3">
                         <a th:href="@{/login}" class="btn btn-dark px-4 fw-bold shadow-sm" th:text="#{register.success.button}">Go to Login</a>
 
-                        <form th:action="@{/users/resend-verification}" th:method="POST">
+                        <form th:action="@{/resend-verification}" th:method="POST">
                             <input type="hidden" name="email" th:value="${registerSeedDto.email}">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 <p class="small text-muted mb-0" th:text="#{auth.resend.text}">Didn't receive the email?</p>

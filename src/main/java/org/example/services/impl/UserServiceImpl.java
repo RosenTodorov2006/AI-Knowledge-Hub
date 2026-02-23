@@ -6,10 +6,13 @@ import org.example.models.dtos.importDtos.ChangeProfileDto;
 import org.example.models.dtos.importDtos.ChangeUserPasswordDto;
 import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.models.entities.UserEntity;
+import org.example.models.entities.VerificationTokenEntity;
 import org.example.models.entities.enums.ApplicationRole;
 import org.example.repositories.UserRepository;
+import org.example.repositories.VerificationTokenRepository;
 import org.example.services.EmailService;
 import org.example.services.UserService;
+import org.example.utils.VerificationUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -33,40 +36,39 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final MessageSource messageSource;
     private final EmailService emailService;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final VerificationUtil verificationUtil;
 
     public UserServiceImpl(UserRepository userRepository,
                            ModelMapper modelMapper,
-                           PasswordEncoder passwordEncoder, MessageSource messageSource, EmailService emailService) {
+                           PasswordEncoder passwordEncoder, MessageSource messageSource, EmailService emailService, VerificationTokenRepository verificationTokenRepository, VerificationUtil verificationUtil) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
         this.messageSource = messageSource;
         this.emailService = emailService;
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.verificationUtil = verificationUtil;
     }
 
     @Override
+    @Transactional
     public void register(RegisterSeedDto registerSeedDto) {
         UserEntity user = this.modelMapper.map(registerSeedDto, UserEntity.class);
         user.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
         user.setRole(this.userRepository.count() == 0 ? ApplicationRole.ADMIN : ApplicationRole.USER);
         user.setEmailNotificationsEnabled(true);
-
         user.setActive(false);
         user.setCreatedAt(LocalDateTime.now());
-
-        String token = UUID.randomUUID().toString();
-        user.setVerificationToken(token);
-
         this.userRepository.save(user);
 
-        String confirmationLink = "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io/users/verify?token=" + token;
+        String token = UUID.randomUUID().toString();
+        VerificationTokenEntity verificationToken = new VerificationTokenEntity();
+        verificationUtil.refreshPlaceholderToken(verificationToken, user, token);
+        this.verificationTokenRepository.save(verificationToken);
 
-        String emailBody = String.format(
-                "Hello %s,\n\nPlease verify your account by clicking the link below:\n%s",
-                user.getUsername(), confirmationLink
-        );
-
-        emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", emailBody);
+        String link = verificationUtil.buildConfirmationLink("http://localhost:8080", token);
+        emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", "Link: " + link);
     }
 
     @Override
@@ -75,20 +77,41 @@ public class UserServiceImpl implements UserService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (user.isActive()) {
-            return;
-        }
+        if (user.isActive()) return;
 
         String newToken = UUID.randomUUID().toString();
-        user.setVerificationToken(newToken);
-        userRepository.save(user);
+        VerificationTokenEntity tokenEntity = verificationTokenRepository.findByUser(user)
+                .orElse(new VerificationTokenEntity());
 
-        String confirmationLink = "http://localhost:8080/users/verify?token=" + newToken;
-        String emailBody = String.format("Hello %s,\n\nHere is your new verification link:\n%s",
-                user.getUsername(), confirmationLink);
+        verificationUtil.refreshPlaceholderToken(tokenEntity, user, newToken);
+        verificationTokenRepository.save(tokenEntity);
 
-        emailService.sendSimpleEmail(user.getEmail(), "Resend: Confirm your registration", emailBody);
+        String link = verificationUtil.buildConfirmationLink("http://localhost:8080", newToken);
+        emailService.sendSimpleEmail(user.getEmail(), "Resend: Confirm", "Link: " + link);
     }
+
+    @Override
+    @Transactional
+    public boolean verifyUser(String token) {
+        Optional<VerificationTokenEntity> tokenOptional = verificationTokenRepository.findByToken(token);
+
+        if (tokenOptional.isEmpty()) return false;
+
+        VerificationTokenEntity tokenEntity = tokenOptional.get();
+
+        if (verificationUtil.isTokenExpired(tokenEntity)) {
+            verificationTokenRepository.delete(tokenEntity);
+            return false;
+        }
+
+        UserEntity user = tokenEntity.getUser();
+        user.setActive(true);
+        userRepository.save(user);
+        verificationTokenRepository.delete(tokenEntity);
+
+        return true;
+    }
+
     @Override
     @Transactional
     public void toggleEmailNotifications(String email) {
@@ -97,19 +120,6 @@ public class UserServiceImpl implements UserService {
 
         user.setEmailNotificationsEnabled(!user.isEmailNotificationsEnabled());
         userRepository.save(user);
-    }
-    @Override
-    @Transactional
-    public boolean verifyUser(String token) {
-        Optional<UserEntity> userOptional = userRepository.findByVerificationToken(token);
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            user.setActive(true);
-            user.setVerificationToken(null);
-            userRepository.save(user);
-            return true;
-        }
-        return false;
     }
 
     @Override

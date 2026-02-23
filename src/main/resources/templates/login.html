@@ -26,7 +26,7 @@
                 </div>
 
                 <div th:if="${param.disabled}" class="alert alert-warning py-2 px-3 small mb-3 border-0 shadow-sm" style="background-color: #fffde7; color: #856404; border-left: 4px solid #fbc02d !important;">
-                    <form th:action="@{/users/resend-verification}" th:method="POST" style="display: flex; align-items: center; flex-wrap: nowrap; gap: 8px;">
+                    <form th:action="@{/resend-verification}" th:method="POST" style="display: flex; align-items: center; flex-wrap: nowrap; gap: 8px;">
                         <span class="small fw-bold" style="white-space: nowrap;" th:text="#{login.resend.label}">Account not active?</span>
                         <input type="email" name="email" class="form-control form-control-sm"
                                style="flex-grow: 1; height: 32px; font-size: 0.8rem; border: 1px solid #fbc02d;"
