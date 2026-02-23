@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         this.verificationTokenRepository.save(verificationToken);
 
         String link = verificationUtil.buildConfirmationLink(
-                "http://localhost:8080",
+                "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io",
                 token
         );
         emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", "Link: " + link);
