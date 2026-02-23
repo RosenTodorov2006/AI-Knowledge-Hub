@@ -65,76 +65,51 @@ public class SettingsController {
     }
 
     @PostMapping("/changeInfo")
-    public String changeInfo(@Valid ChangeProfileDto changeProfileDto,
-                             BindingResult bindingResult,
-                             RedirectAttributes redirectAttributes,
-                             Principal principal,
-                             Locale locale) {
+    public String changeInfo(@Valid ChangeProfileDto changeProfileDto, BindingResult bindingResult,
+                             RedirectAttributes redirectAttributes, Principal principal, Locale locale) {
         if (bindingResult.hasErrors()) {
-            handleBindingErrors(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
-            return "redirect:/settings";
+            return handleBindingError(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
         }
 
         try {
             userService.changeProfileInfo(changeProfileDto, principal.getName());
-
-            if (!principal.getName().equals(changeProfileDto.getEmail())) {
-                updateSecurityContext(changeProfileDto.getEmail());
-            }
+            if (!principal.getName().equals(changeProfileDto.getEmail())) updateSecurityContext(changeProfileDto.getEmail());
             return "redirect:/settings?success=true";
-
         } catch (InvalidPasswordException e) {
-            String translatedError = messageSource.getMessage(e.getMessage(), null, locale);
-            redirectAttributes.addFlashAttribute(ATTR_CHANGE_PROFILE, changeProfileDto);
-            redirectAttributes.addFlashAttribute(ATTR_INVALID_PROFILE, true);
-            redirectAttributes.addFlashAttribute("profileError", translatedError);
-            return "redirect:/settings";
+            return handleSecurityError(redirectAttributes, e, locale, ATTR_CHANGE_PROFILE, changeProfileDto, ATTR_INVALID_PROFILE, "profileError");
         }
     }
 
     @PostMapping("/changeUserPassword")
-    public String changeUserPassword(@Valid ChangeUserPasswordDto changeUserPasswordDto,
-                                     BindingResult bindingResult,
-                                     RedirectAttributes redirectAttributes,
-                                     Principal principal,
-                                     Locale locale) {
+    public String changeUserPassword(@Valid ChangeUserPasswordDto changeUserPasswordDto, BindingResult bindingResult,
+                                     RedirectAttributes redirectAttributes, Principal principal, Locale locale) {
         if (bindingResult.hasErrors()) {
-            handleBindingErrors(redirectAttributes, ATTR_CHANGE_PASSWORD, changeUserPasswordDto, bindingResult, ATTR_INVALID_PASSWORD);
-            return "redirect:/settings";
+            return handleBindingError(redirectAttributes, ATTR_CHANGE_PASSWORD, changeUserPasswordDto, bindingResult, ATTR_INVALID_PASSWORD);
         }
 
         try {
             userService.changeUserPassword(changeUserPasswordDto, principal.getName());
             updateSecurityContext(principal.getName());
             return "redirect:/settings?pwSuccess=true";
-
         } catch (InvalidPasswordException e) {
-            String translatedError = messageSource.getMessage(e.getMessage(), null, locale);
-            redirectAttributes.addFlashAttribute(ATTR_CHANGE_PASSWORD, changeUserPasswordDto);
-            redirectAttributes.addFlashAttribute(ATTR_INVALID_PASSWORD, true);
-            redirectAttributes.addFlashAttribute("passwordError", translatedError);
-            return "redirect:/settings";
+            return handleSecurityError(redirectAttributes, e, locale, ATTR_CHANGE_PASSWORD, changeUserPasswordDto, ATTR_INVALID_PASSWORD, "passwordError");
         }
     }
-    @DeleteMapping()
+
+    @PostMapping("/deactivate")
     public String disableAccount(@ModelAttribute("userDeactivateDto") UserDeactivateDto deactivateDto,
                                  Principal principal,
                                  HttpServletRequest request,
                                  HttpServletResponse response,
-                                 RedirectAttributes redirectAttributes) {
-
-        boolean success = userService.deleteUser(principal.getName(), deactivateDto.getCurrentPassword());
-
-        if (!success) {
-            redirectAttributes.addFlashAttribute("deactivateError", "Invalid password. Account not deactivated.");
-            return "redirect:/settings";
+                                 RedirectAttributes redirectAttributes,
+                                 Locale locale) {
+        try {
+            userService.disableUser(principal.getName(), deactivateDto.getCurrentPassword());
+            performLogout(request, response);
+            return "redirect:/?deactivated=true";
+        } catch (InvalidPasswordException e) {
+            return handleSecurityError(redirectAttributes, e, locale, null, null, null, "deactivateError");
         }
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null) {
-            new SecurityContextLogoutHandler().logout(request, response, auth);
-        }
-        return "redirect:/?deactivated=true";
     }
     @PostMapping("/toggle-emails")
     public String toggleEmails(Principal principal, RedirectAttributes redirectAttributes) {
@@ -170,5 +145,27 @@ public class SettingsController {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(newEmail, auth.getCredentials(), auth.getAuthorities())
         );
+    }
+
+    private String handleBindingError(RedirectAttributes ra, String attr, Object dto, BindingResult br, String flag) {
+        handleBindingErrors(ra, attr, dto, br, flag);
+        return "redirect:/settings";
+    }
+
+    private String handleSecurityError(RedirectAttributes ra, InvalidPasswordException e, Locale l,
+                                       String attr, Object dto, String flag, String errorKey) {
+        if (attr != null) ra.addFlashAttribute(attr, dto);
+        if (flag != null) ra.addFlashAttribute(flag, true);
+
+        String translatedError = messageSource.getMessage(e.getMessage(), null, l);
+        ra.addFlashAttribute(errorKey, translatedError);
+        return "redirect:/settings";
+    }
+
+    private void performLogout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
     }
 }

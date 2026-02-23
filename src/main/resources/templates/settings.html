@@ -124,7 +124,7 @@
                             <strong th:text="#{settings.danger.deactivate_label}">Deactivate Account:</strong>
                             <span th:text="#{settings.danger.deactivate_text}">Your data will be preserved but you will be logged out immediately.</span>
                         </p>
-                        <form th:action="@{/settings}" th:method="delete" th:object="${userDeactivateDto}">
+                        <form th:action="@{/settings/deactivate}" th:method="post" th:object="${userDeactivateDto}">
                             <div class="form-group mb-3">
                                 <label class="form-label" th:text="#{settings.common.current_password}">Current password (for confirmation)</label>
                                 <input type="password" th:field="*{currentPassword}" class="form-input border-danger" required

@@ -75,17 +75,16 @@ public class SettingsRestController {
     }
 
     @DeleteMapping("/deactivate")
-    public ResponseEntity<?> deactivateAccount(@RequestBody UserDeactivateDto dto,
+    public ResponseEntity<?> deactivateAccount(@Valid @RequestBody UserDeactivateDto dto,
                                                Principal principal,
                                                Locale locale) {
-        boolean success = userService.deleteUser(principal.getName(), dto.getCurrentPassword());
-
-        if (!success) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid password. Account not deactivated."));
+        try {
+            userService.disableUser(principal.getName(), dto.getCurrentPassword());
+            return ResponseEntity.ok(Map.of("message", "Account deactivated successfully."));
+        } catch (InvalidPasswordException e) {
+            String errorMsg = messageSource.getMessage(e.getMessage(), null, locale);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", errorMsg));
         }
-
-        return ResponseEntity.ok(Map.of("message", "Account deactivated successfully."));
     }
 
     @PostMapping("/toggle-emails")

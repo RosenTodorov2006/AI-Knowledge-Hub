@@ -142,14 +142,10 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findByUsername(username).isEmpty();
     }
 
-    @Override
     @Transactional
     public void changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
-
-        if (!passwordEncoder.matches(changeProfileDto.getCurrentPassword(), userEntity.getPassword())) {
-            throw new InvalidPasswordException();
-        }
+        validatePassword(changeProfileDto.getCurrentPassword(), userEntity.getPassword());
 
         userEntity.setEmail(changeProfileDto.getEmail());
         userEntity.setFullName(changeProfileDto.getFullName());
@@ -160,10 +156,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
-
-        if (!passwordEncoder.matches(changeUserPasswordDto.getCurrentPassword(), userEntity.getPassword())) {
-            throw new InvalidPasswordException();
-        }
+        validatePassword(changeUserPasswordDto.getCurrentPassword(), userEntity.getPassword());
 
         userEntity.setPassword(passwordEncoder.encode(changeUserPasswordDto.getPassword()));
         userRepository.save(userEntity);
@@ -182,16 +175,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public boolean deleteUser(String email, String password) {
+    public void disableUser(String email, String password) {
         UserEntity userEntity = findByEmailOrThrow(email);
-
-        if (!passwordEncoder.matches(password, userEntity.getPassword())) {
-            return false;
-        }
+        validatePassword(password, userEntity.getPassword());
 
         userEntity.setActive(false);
         userRepository.save(userEntity);
-        return true;
     }
     @Override
     @Transactional
@@ -220,6 +209,11 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         messageSource.getMessage(MSG_KEY_NOT_FOUND, null, LocaleContextHolder.getLocale())));
+    }
+    private void validatePassword(String rawPassword, String encodedPassword) {
+        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+            throw new InvalidPasswordException();
+        }
     }
 
     @Override
