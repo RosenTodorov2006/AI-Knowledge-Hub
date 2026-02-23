@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 
 <head th:replace="~{fragments/auth :: auth-head(#{login.title})}"></head>
 
@@ -75,30 +75,14 @@
                     <button type="submit" class="btn btn-dark btn-lg w-100 py-2 fw-bold shadow-sm mt-3" th:text="#{login.button}">Login</button>
                 </form>
 
-                <div class="text-center mt-3">
-                    <a href="javascript:void(0)" id="toggleReactivate" class="small text-muted text-decoration-none">
-                        <span th:text="#{login.reactivate.link.text}">Existing account deactivated?</span>
-                        <span class="text-dark fw-bold" id="actionText" th:text="#{login.reactivate.link.action}">Reactivate here</span>
-                    </a>
-                </div>
-
-                <div id="reactivateSection" class="mt-4 p-3 border rounded shadow-sm"
-                     th:style="${showReactivate} ? 'display: block; background-color: #f8f9fa;' : 'display: none; background-color: #f8f9fa;'">
-
-                    <h5 class="small fw-bold mb-3 text-center" th:text="#{login.reactivate.title}">Reactivate</h5>
-
-                    <form th:action="@{/users/reactivate}" th:method="POST" th:object="${userReactivateDto}">
-                        <input type="email" th:field="*{email}" class="form-input w-100 small mb-2"
-                               th:placeholder="#{login.reactivate.placeholder.email}">
-
-                        <input type="password" th:field="*{password}" class="form-input w-100 small mb-3"
-                               th:placeholder="#{login.reactivate.placeholder.password}">
-
-                        <button type="submit" class="btn btn-outline-dark btn-sm w-100 fw-bold"
-                                th:text="#{login.reactivate.button}">Reactivate</button>
-                    </form>
-                </div>
                 <div class="text-center mt-4">
+                    <p class="small text-muted mb-0">
+                        <span th:text="#{login.reactivate.link.text}">Existing account deactivated?</span>
+                        <a th:href="@{/users/reactivate}" class="text-dark fw-bold text-decoration-none" th:text="#{login.reactivate.link.action}">Reactivate here</a>
+                    </p>
+                </div>
+
+                <div class="text-center mt-3">
                     <p class="small text-muted mb-0">
                         <span th:text="#{login.footer.noaccount}">Don't have an account?</span>
                         <a th:href="@{/register}" class="text-dark fw-bold text-decoration-none" th:text="#{login.footer.register}">Register here</a>
@@ -108,25 +92,6 @@
         </div>
     </div>
 </div>
-
-<script th:inline="javascript">
-    document.getElementById('toggleReactivate').addEventListener('click', function() {
-        const section = document.getElementById('reactivateSection');
-        const actionText = this.querySelector('.fw-bold');
-
-        // Взимаме преводите директно от i18n
-        const txtReactivate = /*[[#{login.reactivate.link.action}]]*/ 'Reactivate here';
-        const txtCancel = /*[[#{login.reactivate.link.cancel}]]*/ 'Cancel reactivation';
-
-        if (section.style.display === 'none') {
-            section.style.display = 'block';
-            actionText.innerText = txtCancel;
-        } else {
-            section.style.display = 'none';
-            actionText.innerText = txtReactivate;
-        }
-    });
-</script>
 
 </body>
 </html>

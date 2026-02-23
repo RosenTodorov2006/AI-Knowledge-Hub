@@ -85,35 +85,37 @@ public class UserController {
     @PostMapping("/users/reactivate")
     public String reactivate(@Valid UserReactivateDto userReactivateDto,
                              BindingResult bindingResult,
-                             RedirectAttributes redirectAttributes) {
+                             RedirectAttributes redirectAttributes,
+                             Locale locale) {
 
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("userReactivateDto", userReactivateDto);
             redirectAttributes.addFlashAttribute(BINDING_RESULT_PREFIX + "userReactivateDto", bindingResult);
-            redirectAttributes.addFlashAttribute("showReactivate", true);
-            return "redirect:/login";
+            return "redirect:/users/reactivate";
         }
 
         boolean isReactivated = userService.reactivateAccount(userReactivateDto.getEmail(), userReactivateDto.getPassword());
 
         if (isReactivated) {
-            redirectAttributes.addFlashAttribute("success", "Account reactivated! You can now log in.");
+            redirectAttributes.addFlashAttribute("success", messageSource.getMessage("reactivate.success.msg", null, locale));
+            return "redirect:/login";
         } else {
             redirectAttributes.addFlashAttribute("userReactivateDto", userReactivateDto);
-            redirectAttributes.addFlashAttribute("reactivateError", "Invalid email or password.");
-            redirectAttributes.addFlashAttribute("showReactivate", true);
+            redirectAttributes.addFlashAttribute("error", messageSource.getMessage("settings.error.password_mismatch", null, locale));
+            return "redirect:/users/reactivate";
         }
-
-        return "redirect:/login";
     }
-
+    @GetMapping("/users/reactivate")
+    public String reactivatePage(Model model) {
+        if (!model.containsAttribute("userReactivateDto")) {
+            model.addAttribute("userReactivateDto", new UserReactivateDto());
+        }
+        return "reactivate";
+    }
     @GetMapping("/login")
     public String login(Model model) {
         if (!model.containsAttribute(ATTR_LOGIN)) {
             model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
-        }
-        if (!model.containsAttribute("userReactivateDto")) {
-            model.addAttribute("userReactivateDto", new UserReactivateDto());
         }
         model.addAttribute(ATTR_INVALID_DATA, false);
         return "login";
