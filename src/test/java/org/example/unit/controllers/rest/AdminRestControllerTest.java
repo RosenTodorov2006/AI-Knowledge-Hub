@@ -53,7 +53,7 @@ public class AdminRestControllerTest {
     }
     @Test
     public void testGetFullMonitorDataShouldReturnMap() throws Exception {
-        AdminStatsDto mockStats = new AdminStatsDto(MOCK_COUNT, MOCK_RATIO, MOCK_DESC);
+        AdminStatsDto mockStats = new AdminStatsDto(MOCK_COUNT, MOCK_RATIO, MOCK_DESC,0,0);
         List<ProcessingJobDto> mockJobs = List.of(new ProcessingJobDto());
 
         Mockito.when(adminService.getSystemStats()).thenReturn(mockStats);
