@@ -15,9 +15,9 @@ public interface UserService {
     boolean isEmailUnique(String email);
     boolean isUsernameUnique(String username);
 
-    boolean changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
+    void changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
 
-    boolean changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email);
+    void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email);
     UserViewDto getUserViewByEmail(String email);
     ChangeProfileDto getChangeProfileDto(String email);
     UserEntity findUserByEmail(String gmail);

@@ -57,7 +57,7 @@ public class SettingsControllerTest {
         mockValidator = Mockito.mock(Validator.class);
         Mockito.lenient().when(mockValidator.supports(Mockito.any())).thenReturn(true);
 
-        SettingsController settingsController = new SettingsController(userService);
+        SettingsController settingsController = new SettingsController(userService, null);
         mockMvc = MockMvcBuilders.standaloneSetup(settingsController)
                 .setViewResolvers(viewResolver)
                 .setValidator(mockValidator)

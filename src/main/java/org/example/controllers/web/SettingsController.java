@@ -3,6 +3,8 @@ package org.example.controllers.web;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.example.exceptions.InvalidPasswordException;
 import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.models.dtos.importDtos.ChangeProfileDto;
 import org.example.models.dtos.importDtos.ChangeUserPasswordDto;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.util.Locale;
 
 @Controller
 @RequestMapping("/settings")
@@ -33,9 +36,10 @@ public class SettingsController {
     public static final String BINDING_RESULT_PREFIX = "org.springframework.validation.BindingResult.";
 
     private final UserService userService;
-
-    public SettingsController(UserService userService) {
+    private final MessageSource messageSource;
+    public SettingsController(UserService userService, MessageSource messageSource) {
         this.userService = userService;
+        this.messageSource = messageSource;
     }
 
     @GetMapping()
@@ -64,49 +68,54 @@ public class SettingsController {
     public String changeInfo(@Valid ChangeProfileDto changeProfileDto,
                              BindingResult bindingResult,
                              RedirectAttributes redirectAttributes,
-                             Principal principal) {
+                             Principal principal,
+                             Locale locale) {
         if (bindingResult.hasErrors()) {
             handleBindingErrors(redirectAttributes, ATTR_CHANGE_PROFILE, changeProfileDto, bindingResult, ATTR_INVALID_PROFILE);
             return "redirect:/settings";
         }
-        boolean success = userService.changeProfileInfo(changeProfileDto, principal.getName());
-        if (!success) {
+
+        try {
+            userService.changeProfileInfo(changeProfileDto, principal.getName());
+
+            if (!principal.getName().equals(changeProfileDto.getEmail())) {
+                updateSecurityContext(changeProfileDto.getEmail());
+            }
+            return "redirect:/settings?success=true";
+
+        } catch (InvalidPasswordException e) {
+            String translatedError = messageSource.getMessage(e.getMessage(), null, locale);
             redirectAttributes.addFlashAttribute(ATTR_CHANGE_PROFILE, changeProfileDto);
             redirectAttributes.addFlashAttribute(ATTR_INVALID_PROFILE, true);
-            redirectAttributes.addFlashAttribute("profileError", "Invalid password.");
+            redirectAttributes.addFlashAttribute("profileError", translatedError);
             return "redirect:/settings";
         }
-        String currentEmail = principal.getName();
-        if (!currentEmail.equals(changeProfileDto.getEmail())) {
-            updateSecurityContext(changeProfileDto.getEmail());
-        }
-
-        return "redirect:/settings?success=true";
     }
 
     @PostMapping("/changeUserPassword")
     public String changeUserPassword(@Valid ChangeUserPasswordDto changeUserPasswordDto,
                                      BindingResult bindingResult,
                                      RedirectAttributes redirectAttributes,
-                                     Principal principal) {
+                                     Principal principal,
+                                     Locale locale) {
         if (bindingResult.hasErrors()) {
             handleBindingErrors(redirectAttributes, ATTR_CHANGE_PASSWORD, changeUserPasswordDto, bindingResult, ATTR_INVALID_PASSWORD);
             return "redirect:/settings";
         }
 
-        boolean success = userService.changeUserPassword(changeUserPasswordDto, principal.getName());
+        try {
+            userService.changeUserPassword(changeUserPasswordDto, principal.getName());
+            updateSecurityContext(principal.getName());
+            return "redirect:/settings?pwSuccess=true";
 
-        if (!success) {
+        } catch (InvalidPasswordException e) {
+            String translatedError = messageSource.getMessage(e.getMessage(), null, locale);
             redirectAttributes.addFlashAttribute(ATTR_CHANGE_PASSWORD, changeUserPasswordDto);
             redirectAttributes.addFlashAttribute(ATTR_INVALID_PASSWORD, true);
-            redirectAttributes.addFlashAttribute("passwordError", "Current password does not match.");
+            redirectAttributes.addFlashAttribute("passwordError", translatedError);
             return "redirect:/settings";
         }
-
-        updateSecurityContext(principal.getName());
-        return "redirect:/settings?pwSuccess=true";
     }
-
     @DeleteMapping()
     public String disableAccount(@ModelAttribute("userDeactivateDto") UserDeactivateDto deactivateDto,
                                  Principal principal,
