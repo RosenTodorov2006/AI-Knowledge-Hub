@@ -62,15 +62,25 @@ public class UserController {
     }
 
     @GetMapping("/users/verify")
-    public String verifyAccount(@RequestParam("token") String token, Model model) {
-        boolean isVerified = userService.verifyUser(token);
+    public String verifyUser(@RequestParam("token") String token, RedirectAttributes redirectAttributes) {
+        String result = userService.verifyUser(token);
 
-        if (isVerified) {
-            return "verification-success";
-        } else {
-            model.addAttribute("error", "Invalid or expired verification token.");
-            return "login";
+        switch (result) {
+            case "SUCCESS":
+                redirectAttributes.addFlashAttribute("success", "Your account has been verified! You can now log in.");
+                break;
+            case "ALREADY_ACTIVE":
+                redirectAttributes.addFlashAttribute("info", "This account is already verified. Please log in.");
+                break;
+            case "EXPIRED":
+                redirectAttributes.addFlashAttribute("error", "The verification link has expired. Please request a new one.");
+                break;
+            default:
+                redirectAttributes.addFlashAttribute("error", "Invalid verification link.");
+                break;
         }
+
+        return "redirect:/login";
     }
     @PostMapping("/users/reactivate")
     public String reactivate(@Valid UserReactivateDto userReactivateDto,

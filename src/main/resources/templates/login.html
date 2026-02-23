@@ -18,11 +18,15 @@
                 </div>
 
                 <div th:if="${success}" class="alert alert-success py-2 px-3 small mb-3 border-0 shadow-sm" style="background-color: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32 !important;">
-                    <strong th:text="${success}">Account verified!</strong>
+                    <strong th:text="#{auth.verify.success}">Account verified!</strong>
+                </div>
+
+                <div th:if="${info}" class="alert alert-info py-2 px-3 small mb-3 border-0 shadow-sm" style="background-color: #e3f2fd; color: #0d47a1; border-left: 4px solid #1976d2 !important;">
+                    <strong th:text="#{auth.verify.already_active}">Already verified!</strong>
                 </div>
 
                 <div th:if="${error}" class="alert alert-danger py-2 px-3 small mb-3 border-0 shadow-sm" style="background-color: #ffebee; color: #c62828; border-left: 4px solid #c62828 !important;">
-                    <strong th:text="${error}">Invalid token!</strong>
+                    <strong th:text="#{auth.verify.error}">Link expired or invalid!</strong>
                 </div>
 
                 <div th:if="${param.disabled}" class="alert alert-warning py-2 px-3 small mb-3 border-0 shadow-sm" style="background-color: #fffde7; color: #856404; border-left: 4px solid #fbc02d !important;">

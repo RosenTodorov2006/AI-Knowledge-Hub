@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
         this.verificationTokenRepository.save(verificationToken);
 
         String link = verificationUtil.buildConfirmationLink(
-                "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io",
+                "http://localhost:8080",
                 token
         );
         emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", "Link: " + link);
@@ -98,24 +98,27 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public boolean verifyUser(String token) {
+    public String verifyUser(String token) {
         Optional<VerificationTokenEntity> tokenOptional = verificationTokenRepository.findByToken(token);
-
-        if (tokenOptional.isEmpty()) return false;
-
-        VerificationTokenEntity tokenEntity = tokenOptional.get();
-
-        if (verificationUtil.isTokenExpired(tokenEntity)) {
-            verificationTokenRepository.delete(tokenEntity);
-            return false;
+        if (tokenOptional.isEmpty()) {
+            return "INVALID";
         }
 
+        VerificationTokenEntity tokenEntity = tokenOptional.get();
         UserEntity user = tokenEntity.getUser();
+
+        if (user.isActive()) {
+            return "ALREADY_ACTIVE";
+        }
+
+        if (verificationUtil.isTokenExpired(tokenEntity)) {
+            return "EXPIRED";
+        }
+
         user.setActive(true);
         userRepository.save(user);
-        verificationTokenRepository.delete(tokenEntity);
 
-        return true;
+        return "SUCCESS";
     }
 
     @Override

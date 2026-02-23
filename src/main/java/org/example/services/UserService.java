@@ -22,7 +22,7 @@ public interface UserService {
     ChangeProfileDto getChangeProfileDto(String email);
     UserEntity findUserByEmail(String gmail);
     List<UserEntity> findAllUsers();
-    boolean verifyUser(String token);
+    String verifyUser(String token);
     boolean deleteUser(String email, String password);
     boolean reactivateAccount(String email, String password);
     void deactivateInactiveUsers(int months);
