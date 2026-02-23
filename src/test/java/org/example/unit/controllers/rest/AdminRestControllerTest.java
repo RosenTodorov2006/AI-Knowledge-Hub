@@ -29,12 +29,12 @@ public class AdminRestControllerTest {
     private MockMvc mockMvc;
     @BeforeEach
     public void setUp() {
-        AdminRestController adminRestController = new AdminRestController(adminService);
+        AdminRestController adminRestController = new AdminRestController(adminService, null);
         mockMvc = MockMvcBuilders.standaloneSetup(adminRestController).build();
     }
     @Test
     public void testGetStatsShouldReturnDto() throws Exception {
-        AdminStatsDto mockStats = new AdminStatsDto(MOCK_COUNT, MOCK_RATIO, MOCK_DESC);
+        AdminStatsDto mockStats = new AdminStatsDto(MOCK_COUNT, MOCK_RATIO, MOCK_DESC, 0, 0);
         Mockito.when(adminService.getSystemStats()).thenReturn(mockStats);
 
         mockMvc.perform(MockMvcRequestBuilders.get(URL_STATS))
