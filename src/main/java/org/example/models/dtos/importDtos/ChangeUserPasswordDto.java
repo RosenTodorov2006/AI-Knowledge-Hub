@@ -8,13 +8,13 @@ import org.hibernate.validator.constraints.Length;
 @ValidPasswords(message = "{validation.user.passwords.match}")
 public class ChangeUserPasswordDto {
     @NotBlank
-    @Size(min = 6)
+    @Size(min = 8)
     private String currentPassword;
-    @Length(min = 3, max = 20, message = "{validation.user.password.length}")
+    @Length(min = 8, max = 20, message = "{validation.user.password.length}")
     @NotNull
     private String password;
 
-    @Length(min = 3, max = 20, message = "{validation.user.password.confirm.length}")
+    @Length(min = 8, max = 20, message = "{validation.user.password.confirm.length}")
     @NotNull
     private String confirmPassword;
 
