@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         this.verificationTokenRepository.save(verificationToken);
 
         String link = verificationUtil.buildConfirmationLink(
-                "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io",
+                "http://localhost:8080",
                 token
         );
         emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", "Link: " + link);
@@ -101,6 +101,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public String verifyUser(String token) {
         Optional<VerificationTokenEntity> tokenOptional = verificationTokenRepository.findByToken(token);
+
         if (tokenOptional.isEmpty()) {
             return "INVALID";
         }
@@ -109,6 +110,10 @@ public class UserServiceImpl implements UserService {
         UserEntity user = tokenEntity.getUser();
 
         if (user.isActive()) {
+            if (!"verified".equals(tokenEntity.getToken())) {
+                tokenEntity.setToken("verified");
+                verificationTokenRepository.save(tokenEntity);
+            }
             return "ALREADY_ACTIVE";
         }
 
@@ -118,6 +123,11 @@ public class UserServiceImpl implements UserService {
 
         user.setActive(true);
         userRepository.save(user);
+
+        tokenEntity.setToken("verified");
+        tokenEntity.setExpiryDate(LocalDateTime.now().plusYears(50));
+
+        verificationTokenRepository.save(tokenEntity);
 
         return "SUCCESS";
     }
@@ -165,7 +175,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deactivateInactiveUsers(int months) {
         LocalDateTime threshold = LocalDateTime.now().minusMonths(months);
-        userRepository.findInactiveUsers(threshold);
+        List<UserEntity> inactiveUsers = userRepository.findInactiveUsers(threshold);
+
+        inactiveUsers.forEach(user -> user.setActive(false));
+
+        userRepository.saveAll(inactiveUsers);
     }
 
     @Override
@@ -180,11 +194,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public boolean reactivateAccount(String email, String password) {
-        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+        UserEntity user = userRepository.findByEmail(email).orElse(null);
 
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            if (!user.isActive() && passwordEncoder.matches(password, user.getPassword())) {
+        if (user != null && !user.isActive()) {
+            validatePassword(password, user.getPassword());
+
+            VerificationTokenEntity token = verificationTokenRepository.findByUser(user).orElse(null);
+
+            if (token != null && "verified".equals(token.getToken())) {
                 user.setActive(true);
                 userRepository.save(user);
                 return true;
