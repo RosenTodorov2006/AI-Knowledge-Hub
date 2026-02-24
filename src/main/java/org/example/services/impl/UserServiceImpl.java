@@ -68,11 +68,7 @@ public class UserServiceImpl implements UserService {
         verificationUtil.refreshPlaceholderToken(verificationToken, user, token);
         this.verificationTokenRepository.save(verificationToken);
 
-        String link = verificationUtil.buildConfirmationLink(
-                "http://localhost:8080",
-                token
-        );
-        emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", "Link: " + link);
+        emailService.sendRegistrationEmail(user.getEmail(), token);
     }
 
     @Override
@@ -90,11 +86,7 @@ public class UserServiceImpl implements UserService {
         verificationUtil.refreshPlaceholderToken(tokenEntity, user, newToken);
         verificationTokenRepository.save(tokenEntity);
 
-        String link = verificationUtil.buildConfirmationLink(
-                "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io",
-                newToken
-        );
-        emailService.sendSimpleEmail(user.getEmail(), "Resend: Confirm", "Link: " + link);
+        emailService.sendResendVerificationEmail(user.getEmail(), newToken);
     }
 
     @Override
