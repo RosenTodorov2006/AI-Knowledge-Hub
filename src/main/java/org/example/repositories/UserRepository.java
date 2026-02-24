@@ -14,7 +14,13 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByEmail(String email);
     Optional<UserEntity> findByUsername(String username);
+<<<<<<< Updated upstream
     @Query("SELECT u FROM UserEntity u " +
+=======
+    Optional<UserEntity> findByVerificationToken(String token);
+    @Query("UPDATE UserEntity u " +
+            "set u.active = false " +
+>>>>>>> Stashed changes
             "WHERE u.active = true " +
             "AND u.createdAt < :threshold " +
             "AND NOT EXISTS (SELECT c FROM Chat c WHERE c.userEntity = u AND c.lastMessageAt > :threshold)")
