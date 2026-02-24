@@ -16,7 +16,6 @@ import java.util.Objects;
 public class OpenAiClient {
     private static final String OPENAI_THREADS_URL = "https://api.openai.com/v1/threads";
     private static final String URL_SEPARATOR = "/";
-    private static final String ASSISTANT_ID = "asst_aAiBqIjw5EolrhSfnQSZAdwL";
     private static final String PATH_MESSAGES = "/messages";
     private static final String PATH_RUNS = "/runs";
     private static final String OPENAI_BETA_HEADER = "OpenAI-Beta";
@@ -35,7 +34,11 @@ public class OpenAiClient {
     private static final String STATUS_COMPLETED = "completed";
     private static final String STATUS_FAILED = "failed";
     private static final String EMPTY_JSON = "{}";
-    private static final long POLLING_INTERVAL_MS = 1000;
+    @Value("${app.openai.assistant-id}")
+    private String assistantId;
+
+    @Value("${app.openai.polling-interval}")
+    private long pollingInterval;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -63,7 +66,7 @@ public class OpenAiClient {
     }
 
     private String createRun(String threadId) {
-        Map<String, String> body = Map.of(JSON_KEY_ASSISTANT_ID, ASSISTANT_ID);
+        Map<String, String> body = Map.of(JSON_KEY_ASSISTANT_ID, assistantId);
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, getHeaders());
         String url = OPENAI_THREADS_URL + URL_SEPARATOR + threadId + PATH_RUNS;
         Map<String, Object> response = restTemplate.postForObject(url, entity, Map.class);
@@ -76,7 +79,7 @@ public class OpenAiClient {
 
         while (!STATUS_COMPLETED.equals(status)) {
             try {
-                Thread.sleep(POLLING_INTERVAL_MS);
+                Thread.sleep(pollingInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);

@@ -16,6 +16,7 @@ import org.example.utils.VectorUtils;
 import org.modelmapper.ModelMapper;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.*;
@@ -40,7 +41,6 @@ public class ChatServiceImpl implements ChatService {
     private static final String MSG_KEY_NOT_FOUND = "error.chat.notfound";
     private static final String MSG_KEY_DENIED = "error.chat.denied";
     private static final String PROMPT_TEMPLATE = "Context:\n%s\n\nQuestion: %s";
-    private static final int DEFAULT_TOP_K = 5;
     private final ChatRepository chatRepository;
     private final DocumentProcessingService documentProcessingService;
     private final MessageService messageService;
@@ -52,6 +52,12 @@ public class ChatServiceImpl implements ChatService {
     private final OpenAiClient openAiClient;
     private final MessageSource messageSource;
     private static final Logger log = LoggerFactory.getLogger(ChatServiceImpl.class);
+
+    @Value("${app.chat.similarity-threshold}")
+    private double similarityThreshold;
+
+    @Value("${app.chat.top-k}")
+    private int topK;
 
     public ChatServiceImpl(ChatRepository chatRepository,
                            DocumentProcessingService documentProcessingService,
@@ -100,7 +106,7 @@ public class ChatServiceImpl implements ChatService {
         List<ChunkSearchResult> topResults = searchContext(chat.getDocument().getId(), content);
 
         List<ChunkSearchResult> relevantResults = topResults.stream()
-                .filter(result -> result.getSimilarity() >= 0.35)
+                .filter(result -> result.getSimilarity() >= similarityThreshold)
                 .toList();
 
         String contextText;
@@ -182,7 +188,7 @@ public class ChatServiceImpl implements ChatService {
 
     private List<ChunkSearchResult> searchContext(Long documentId, String query) {
         float[] queryVector = VectorUtils.toFloatArray(embeddingModel.embed(query));
-        return this.documentProcessingService.findTopSimilar(documentId, queryVector, DEFAULT_TOP_K);
+        return this.documentProcessingService.findTopSimilar(documentId, queryVector, topK);
     }
 
     private void triggerAsyncProcessing(Long documentId) {

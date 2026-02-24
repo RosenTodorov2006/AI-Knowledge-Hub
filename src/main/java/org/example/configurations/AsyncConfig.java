@@ -4,6 +4,8 @@ import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -16,13 +18,22 @@ public class AsyncConfig {
     public static final String EXECUTOR_BEAN_NAME = "taskExecutor";
     public static final String THREAD_NAME_PREFIX = "DocProc-";
 
+    @Value("${app.async.core-pool-size}")
+    private int corePoolSize;
+
+    @Value("${app.async.max-pool-size}")
+    private int maxPoolSize;
+
+    @Value("${app.async.queue-capacity}")
+    private int queueCapacity;
+
     @Bean(name = EXECUTOR_BEAN_NAME)
     @Primary
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1);
-        executor.setMaxPoolSize(1);
-        executor.setQueueCapacity(50);
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
         executor.setThreadNamePrefix(THREAD_NAME_PREFIX);
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
