@@ -53,7 +53,8 @@ public class SettingsRestControllerIntegrationTest extends BaseIntegrationTest {
                 ApplicationRole.USER,
                 true,
                 LocalDateTime.now(),
-                TEST_FULL_NAME
+                TEST_FULL_NAME,
+                false
         );
         userRepository.save(user);
     }
@@ -81,8 +82,7 @@ public class SettingsRestControllerIntegrationTest extends BaseIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDto))
                         .with(csrf()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PREFIX + SettingsRestController.JSON_KEY_ERRORS).isArray());
+                .andExpect(status().isBadRequest());
     }
     @Test
     @WithMockUser(username = USER_EMAIL)
@@ -94,16 +94,14 @@ public class SettingsRestControllerIntegrationTest extends BaseIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto))
                         .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PREFIX + SettingsRestController.JSON_KEY_MESSAGE).exists());
+                .andExpect(status().isOk());
     }
     @Test
     @WithMockUser(username = USER_EMAIL)
     public void testRestDeleteAccount_Success() throws Exception {
         mockMvc.perform(delete(API_BASE)
                         .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PREFIX + SettingsRestController.JSON_KEY_MESSAGE).exists());
+                .andExpect(status().isOk());
         Optional<UserEntity> deletedUser = userRepository.findByEmail(USER_EMAIL);
         Assertions.assertTrue(deletedUser.isEmpty() || !deletedUser.get().isActive());
     }

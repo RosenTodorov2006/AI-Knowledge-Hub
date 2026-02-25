@@ -9,7 +9,7 @@ import org.hibernate.validator.constraints.Length;
 
 public class ChangeProfileDto {
     @NotBlank
-    @Size(min = 6)
+    @Size(min = 8)
     private String currentPassword;
     @Email(message = "{validation.user.email.invalid}")
     @NotBlank(message = "{validation.user.email.required}")

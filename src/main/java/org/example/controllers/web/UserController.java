@@ -62,48 +62,60 @@ public class UserController {
     }
 
     @GetMapping("/users/verify")
-    public String verifyAccount(@RequestParam("token") String token, Model model) {
-        boolean isVerified = userService.verifyUser(token);
+    public String verifyUser(@RequestParam("token") String token, RedirectAttributes redirectAttributes) {
+        String result = userService.verifyUser(token);
 
-        if (isVerified) {
-            return "verification-success";
-        } else {
-            model.addAttribute("error", "Invalid or expired verification token.");
-            return "login";
+        switch (result) {
+            case "SUCCESS":
+                redirectAttributes.addFlashAttribute("success", "Your account has been verified! You can now log in.");
+                break;
+            case "ALREADY_ACTIVE":
+                redirectAttributes.addFlashAttribute("info", "This account is already verified. Please log in.");
+                break;
+            case "EXPIRED":
+                redirectAttributes.addFlashAttribute("error", "The verification link has expired. Please request a new one.");
+                break;
+            default:
+                redirectAttributes.addFlashAttribute("error", "Invalid verification link.");
+                break;
         }
+
+        return "redirect:/login";
     }
     @PostMapping("/users/reactivate")
     public String reactivate(@Valid UserReactivateDto userReactivateDto,
                              BindingResult bindingResult,
-                             RedirectAttributes redirectAttributes) {
+                             RedirectAttributes redirectAttributes,
+                             Locale locale) {
 
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("userReactivateDto", userReactivateDto);
             redirectAttributes.addFlashAttribute(BINDING_RESULT_PREFIX + "userReactivateDto", bindingResult);
-            redirectAttributes.addFlashAttribute("showReactivate", true);
-            return "redirect:/login";
+            return "redirect:/users/reactivate";
         }
 
         boolean isReactivated = userService.reactivateAccount(userReactivateDto.getEmail(), userReactivateDto.getPassword());
 
         if (isReactivated) {
-            redirectAttributes.addFlashAttribute("success", "Account reactivated! You can now log in.");
+            redirectAttributes.addFlashAttribute("success", messageSource.getMessage("reactivate.success.msg", null, locale));
+            return "redirect:/login";
         } else {
             redirectAttributes.addFlashAttribute("userReactivateDto", userReactivateDto);
-            redirectAttributes.addFlashAttribute("reactivateError", "Invalid email or password.");
-            redirectAttributes.addFlashAttribute("showReactivate", true);
+            redirectAttributes.addFlashAttribute("error", messageSource.getMessage("settings.error.password_mismatch", null, locale));
+            return "redirect:/users/reactivate";
         }
-
-        return "redirect:/login";
     }
-
+    @GetMapping("/users/reactivate")
+    public String reactivatePage(Model model) {
+        if (!model.containsAttribute("userReactivateDto")) {
+            model.addAttribute("userReactivateDto", new UserReactivateDto());
+        }
+        return "reactivate";
+    }
     @GetMapping("/login")
     public String login(Model model) {
         if (!model.containsAttribute(ATTR_LOGIN)) {
             model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
-        }
-        if (!model.containsAttribute("userReactivateDto")) {
-            model.addAttribute("userReactivateDto", new UserReactivateDto());
         }
         model.addAttribute(ATTR_INVALID_DATA, false);
         return "login";
@@ -116,6 +128,18 @@ public class UserController {
         model.addAttribute(ATTR_LOGIN, new LoginSeedDto());
 
         return "login";
+    }
+
+    @PostMapping("/resend-verification")
+    public String resendVerification(@RequestParam("email") String email, RedirectAttributes redirectAttributes) {
+        try {
+            userService.resendVerificationEmail(email);
+            redirectAttributes.addFlashAttribute("success", "A new verification email has been sent to " + email);
+            return "redirect:/login?disabled=true";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Could not resend verification email.");
+            return "redirect:/login?error";
+        }
     }
 
     private String getErrorMessage(HttpServletRequest request) {

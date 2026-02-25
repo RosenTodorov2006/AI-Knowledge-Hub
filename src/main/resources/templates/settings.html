@@ -58,7 +58,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Current password (for confirmation)</label>
+                            <label class="form-label" th:text="#{settings.common.current_password}">Current password (for confirmation)</label>
                             <input type="password" th:field="*{currentPassword}" class="form-input" required
                                    th:classappend="${profileError} ? 'input-error'">
                             <small th:if="${profileError}" class="error-block" th:text="${profileError}"></small>
@@ -84,7 +84,7 @@
                 <div class="card-body">
                     <form class="settings-form" th:action="@{/settings/changeUserPassword}" th:method="post" th:object="${changeUserPasswordDto}">
                         <div class="form-group">
-                            <label class="form-label">Current password (for confirmation)</label>
+                            <label class="form-label" th:text="#{settings.common.current_password}">Current password (for confirmation)</label>
                             <input type="password" th:field="*{currentPassword}" class="form-input" required
                                    th:classappend="${passwordError} ? 'input-error'">
                             <small th:if="${passwordError}" class="error-block" th:text="${passwordError}"></small>
@@ -124,9 +124,9 @@
                             <strong th:text="#{settings.danger.deactivate_label}">Deactivate Account:</strong>
                             <span th:text="#{settings.danger.deactivate_text}">Your data will be preserved but you will be logged out immediately.</span>
                         </p>
-                        <form th:action="@{/settings}" th:method="delete" th:object="${userDeactivateDto}">
+                        <form th:action="@{/settings/deactivate}" th:method="post" th:object="${userDeactivateDto}">
                             <div class="form-group mb-3">
-                                <label class="form-label">Current password (for confirmation)</label>
+                                <label class="form-label" th:text="#{settings.common.current_password}">Current password (for confirmation)</label>
                                 <input type="password" th:field="*{currentPassword}" class="form-input border-danger" required
                                        th:classappend="${deactivateError} ? 'input-error'">
                                 <small th:if="${deactivateError}" class="error-block" th:text="${deactivateError}"></small>
@@ -139,12 +139,29 @@
                     </div>
                 </div>
             </div>
+
+            <div class="settings-card" style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 600; color: #111827; margin: 0;" th:text="#{settings.email.notifications.title}">Email Notifications</h3>
+                        <p style="font-size: 0.875rem; color: #6B7280; margin: 4px 0 0 0;" th:text="#{settings.email.notifications.desc}">Receive updates about your document processing and account security.</p>
+                    </div>
+
+                    <form th:action="@{/settings/toggle-emails}" method="post">
+                        <button type="submit"
+                                style="padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s;"
+                                th:styleappend="${currentUser.emailNotificationsEnabled} ? 'background: #FEE2E2; color: #991B1B;' : 'background: #D1FAE5; color: #065F46;'">
+                            <span th:text="${currentUser.emailNotificationsEnabled} ? #{settings.email.notifications.disable} : #{settings.email.notifications.enable}">Toggle</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </main>
 </div>
 
 <button th:replace="~{fragments/layout :: mobile-toggle}"></button>
-
 <th:block th:replace="~{fragments/scripts :: common-scripts}"></th:block>
+
 </body>
 </html>

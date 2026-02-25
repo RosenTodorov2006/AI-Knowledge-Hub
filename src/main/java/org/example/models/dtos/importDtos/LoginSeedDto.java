@@ -10,7 +10,7 @@ public class LoginSeedDto {
     @NotBlank(message = "{validation.user.email.required}")
     private String email;
 
-    @Length(min = 3, max = 20, message = "{validation.user.password.length}")
+    @Length(min = 8, max = 20, message = "{validation.user.password.length}")
     @NotNull(message = "{validation.user.password.required}")
     private String password;
 

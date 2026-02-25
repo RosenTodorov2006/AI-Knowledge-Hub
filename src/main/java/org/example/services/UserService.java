@@ -14,17 +14,17 @@ public interface UserService {
     void register(RegisterSeedDto registerSeedDto);
     boolean isEmailUnique(String email);
     boolean isUsernameUnique(String username);
-
-    boolean changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
-
-    boolean changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email);
+    void changeProfileInfo(ChangeProfileDto changeProfileDto, String email);
+    void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email);
     UserViewDto getUserViewByEmail(String email);
     ChangeProfileDto getChangeProfileDto(String email);
     UserEntity findUserByEmail(String gmail);
     List<UserEntity> findAllUsers();
-    boolean verifyUser(String token);
-    boolean deleteUser(String email, String password);
+    String verifyUser(String token);
+    void disableUser(String email, String password);
     boolean reactivateAccount(String email, String password);
     void deactivateInactiveUsers(int months);
     long countAllUsers();
+    void toggleEmailNotifications(String email);
+    void resendVerificationEmail(String email);
 }

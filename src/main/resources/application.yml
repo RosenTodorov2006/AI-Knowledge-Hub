@@ -1,13 +1,22 @@
 server:
   port: 8080
-
+app:
+  openai:
+    assistant-id: ${APP_OPENAI_ASSISTANT_ID}
+    polling-interval: ${APP_OPENAI_POLLING_INTERVAL}
+  async:
+    core-pool-size: ${APP_ASYNC_CORE_POOL_SIZE}
+    max-pool-size: ${APP_ASYNC_MAX_POOL_SIZE}
+    queue-capacity: ${APP_ASYNC_QUEUE_CAPACITY}
+  chat:
+    similarity-threshold: ${APP_CHAT_SIMILARITY_THRESHOLD}
+    top-k: ${APP_CHAT_TOP_K}
 spring:
   mail:
     host: smtp.gmail.com
     port: 587
     username: aiknowledgehuba@gmail.com
-    # ТУК ПОСТАВИ 16-ЦИФРЕНИЯ КОД (без интервали)
-    password: jaxaawvcaalruhny
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:

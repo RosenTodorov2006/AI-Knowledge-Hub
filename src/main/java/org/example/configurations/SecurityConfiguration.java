@@ -19,7 +19,7 @@ public class SecurityConfiguration {
                         authorizeRequests
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                                 .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
-                                .requestMatchers("/", "/login", "/register", "/work","/users/verify", "/pricing", "/features", "/login-error", "/users/reactivate").permitAll() // Добави /login-error тук!
+                                .requestMatchers("/", "/login", "/register", "/work","/resend-verification","/users/verify", "/pricing", "/features", "/login-error", "/users/reactivate").permitAll() // Добави /login-error тук!
                                 .requestMatchers("/api/chats/**").permitAll()
                                 .requestMatchers("/api/test/**", "/api/settings/**").permitAll()
                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")

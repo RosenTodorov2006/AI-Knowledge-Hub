@@ -1,20 +1,25 @@
 package org.example.services.impl;
 
 import jakarta.transaction.Transactional;
+import org.example.exceptions.InvalidPasswordException;
 import org.example.models.dtos.exportDtos.UserViewDto;
 import org.example.models.dtos.importDtos.ChangeProfileDto;
 import org.example.models.dtos.importDtos.ChangeUserPasswordDto;
 import org.example.models.dtos.importDtos.RegisterSeedDto;
 import org.example.models.entities.UserEntity;
+import org.example.models.entities.VerificationTokenEntity;
 import org.example.models.entities.enums.ApplicationRole;
 import org.example.repositories.UserRepository;
+import org.example.repositories.VerificationTokenRepository;
 import org.example.services.EmailService;
 import org.example.services.UserService;
+import org.example.utils.VerificationUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,53 +37,101 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final MessageSource messageSource;
     private final EmailService emailService;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final VerificationUtil verificationUtil;
 
     public UserServiceImpl(UserRepository userRepository,
                            ModelMapper modelMapper,
-                           PasswordEncoder passwordEncoder, MessageSource messageSource, EmailService emailService) {
+                           PasswordEncoder passwordEncoder, MessageSource messageSource, EmailService emailService, VerificationTokenRepository verificationTokenRepository, VerificationUtil verificationUtil) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
         this.messageSource = messageSource;
         this.emailService = emailService;
-    }
-
-    @Override
-    public void register(RegisterSeedDto registerSeedDto) {
-        UserEntity user = this.modelMapper.map(registerSeedDto, UserEntity.class);
-        user.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
-        user.setRole(this.userRepository.count() == 0 ? ApplicationRole.ADMIN : ApplicationRole.USER);
-
-        user.setActive(false);
-        user.setCreatedAt(LocalDateTime.now());
-
-        String token = UUID.randomUUID().toString();
-        user.setVerificationToken(token);
-
-        this.userRepository.save(user);
-
-        String confirmationLink = "https://ai-knowledge-app.yellowhill-b3aceaa2.northeurope.azurecontainerapps.io/users/verify?token=" + token;
-
-        String emailBody = String.format(
-                "Hello %s,\n\nPlease verify your account by clicking the link below:\n%s",
-                user.getUsername(), confirmationLink
-        );
-
-        emailService.sendSimpleEmail(user.getEmail(), "Confirm your registration", emailBody);
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.verificationUtil = verificationUtil;
     }
 
     @Override
     @Transactional
-    public boolean verifyUser(String token) {
-        Optional<UserEntity> userOptional = userRepository.findByVerificationToken(token);
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            user.setActive(true);
-            user.setVerificationToken(null);
-            userRepository.save(user);
-            return true;
+    public void register(RegisterSeedDto registerSeedDto) {
+        UserEntity user = this.modelMapper.map(registerSeedDto, UserEntity.class);
+        user.setPassword(this.passwordEncoder.encode(registerSeedDto.getPassword()));
+        user.setRole(this.userRepository.count() == 0 ? ApplicationRole.ADMIN : ApplicationRole.USER);
+        user.setEmailNotificationsEnabled(true);
+        user.setActive(false);
+        user.setCreatedAt(LocalDateTime.now());
+        this.userRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+        VerificationTokenEntity verificationToken = new VerificationTokenEntity();
+        verificationUtil.refreshPlaceholderToken(verificationToken, user, token);
+        this.verificationTokenRepository.save(verificationToken);
+
+        emailService.sendRegistrationEmail(user.getEmail(), token);
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (user.isActive()) return;
+
+        String newToken = UUID.randomUUID().toString();
+        VerificationTokenEntity tokenEntity = verificationTokenRepository.findByUser(user)
+                .orElse(new VerificationTokenEntity());
+
+        verificationUtil.refreshPlaceholderToken(tokenEntity, user, newToken);
+        verificationTokenRepository.save(tokenEntity);
+
+        emailService.sendResendVerificationEmail(user.getEmail(), newToken);
+    }
+
+    @Override
+    @Transactional
+    public String verifyUser(String token) {
+        Optional<VerificationTokenEntity> tokenOptional = verificationTokenRepository.findByToken(token);
+
+        if (tokenOptional.isEmpty()) {
+            return "INVALID";
         }
-        return false;
+
+        VerificationTokenEntity tokenEntity = tokenOptional.get();
+        UserEntity user = tokenEntity.getUser();
+
+        if (user.isActive()) {
+            if (!"verified".equals(tokenEntity.getToken())) {
+                tokenEntity.setToken("verified");
+                verificationTokenRepository.save(tokenEntity);
+            }
+            return "ALREADY_ACTIVE";
+        }
+
+        if (verificationUtil.isTokenExpired(tokenEntity)) {
+            return "EXPIRED";
+        }
+
+        user.setActive(true);
+        userRepository.save(user);
+
+        tokenEntity.setToken("verified");
+        tokenEntity.setExpiryDate(LocalDateTime.now().plusYears(50));
+
+        verificationTokenRepository.save(tokenEntity);
+
+        return "SUCCESS";
+    }
+
+    @Override
+    @Transactional
+    public void toggleEmailNotifications(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        user.setEmailNotificationsEnabled(!user.isEmailNotificationsEnabled());
+        userRepository.save(user);
     }
 
     @Override
@@ -91,34 +144,24 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findByUsername(username).isEmpty();
     }
 
-    @Override
     @Transactional
-    public boolean changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
+    public void changeProfileInfo(ChangeProfileDto changeProfileDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
-
-        if (!passwordEncoder.matches(changeProfileDto.getCurrentPassword(), userEntity.getPassword())) {
-
-            return false;
-        }
+        validatePassword(changeProfileDto.getCurrentPassword(), userEntity.getPassword());
 
         userEntity.setEmail(changeProfileDto.getEmail());
         userEntity.setFullName(changeProfileDto.getFullName());
         userRepository.save(userEntity);
-        return true;
     }
 
     @Override
     @Transactional
-    public boolean changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
+    public void changeUserPassword(ChangeUserPasswordDto changeUserPasswordDto, String email) {
         UserEntity userEntity = findByEmailOrThrow(email);
-
-        if (!passwordEncoder.matches(changeUserPasswordDto.getCurrentPassword(), userEntity.getPassword())) {
-            return false;
-        }
+        validatePassword(changeUserPasswordDto.getCurrentPassword(), userEntity.getPassword());
 
         userEntity.setPassword(passwordEncoder.encode(changeUserPasswordDto.getPassword()));
         userRepository.save(userEntity);
-        return true;
     }
     @Override
     @Transactional
@@ -126,33 +169,31 @@ public class UserServiceImpl implements UserService {
         LocalDateTime threshold = LocalDateTime.now().minusMonths(months);
         List<UserEntity> inactiveUsers = userRepository.findInactiveUsers(threshold);
 
-        for (UserEntity user : inactiveUsers) {
-            user.setActive(false);
-            userRepository.save(user);
-        }
+        inactiveUsers.forEach(user -> user.setActive(false));
+
+        userRepository.saveAll(inactiveUsers);
     }
 
     @Override
     @Transactional
-    public boolean deleteUser(String email, String password) {
+    public void disableUser(String email, String password) {
         UserEntity userEntity = findByEmailOrThrow(email);
-
-        if (!passwordEncoder.matches(password, userEntity.getPassword())) {
-            return false;
-        }
+        validatePassword(password, userEntity.getPassword());
 
         userEntity.setActive(false);
         userRepository.save(userEntity);
-        return true;
     }
     @Override
     @Transactional
     public boolean reactivateAccount(String email, String password) {
-        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+        UserEntity user = userRepository.findByEmail(email).orElse(null);
 
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            if (!user.isActive() && passwordEncoder.matches(password, user.getPassword())) {
+        if (user != null && !user.isActive()) {
+            validatePassword(password, user.getPassword());
+
+            VerificationTokenEntity token = verificationTokenRepository.findByUser(user).orElse(null);
+
+            if (token != null && "verified".equals(token.getToken())) {
                 user.setActive(true);
                 userRepository.save(user);
                 return true;
@@ -172,6 +213,11 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         messageSource.getMessage(MSG_KEY_NOT_FOUND, null, LocaleContextHolder.getLocale())));
+    }
+    private void validatePassword(String rawPassword, String encodedPassword) {
+        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+            throw new InvalidPasswordException();
+        }
     }
 
     @Override

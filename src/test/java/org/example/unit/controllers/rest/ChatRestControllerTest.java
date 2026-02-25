@@ -49,7 +49,7 @@ public class ChatRestControllerTest {
     private MockMvc mockMvc;
     @BeforeEach
     public void setUp() {
-        ChatRestController chatRestController = new ChatRestController(dashboardService, chatService, messageSource);
+        ChatRestController chatRestController = new ChatRestController(dashboardService, chatService, null, messageSource);
         mockMvc = MockMvcBuilders.standaloneSetup(chatRestController).build();
     }
     @Test

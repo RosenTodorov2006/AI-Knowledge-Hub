@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public class UserDeactivateDto {
     @NotBlank
-    @Size(min = 6)
+    @Size(min = 8)
     private String currentPassword;
 
     public String getCurrentPassword() {
